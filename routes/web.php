@@ -12,6 +12,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('user-manager', [UserController::class, 'index'])->name('user-manager');
         Route::post('user-manager', [UserController::class, 'store'])->name('user-manager.store');
         Route::put('user-manager/{user}', [UserController::class, 'update'])->name('user-manager.update');
+        Route::delete('user-manager/{user}', [UserController::class, 'destroy'])->name('user-manager.destroy');
     });
 });
 

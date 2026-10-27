@@ -91,8 +91,17 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user)
+    public function destroy(User $user): RedirectResponse
     {
-        //
+        abort_if($user->role === 'administrator', 403, 'Administrator tidak dapat dihapus.');
+
+        $user->delete();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Pegawai berhasil dihapus.'),
+        ]);
+
+        return back();
     }
 }

@@ -40,6 +40,7 @@ const statuses = [
 export default function UserManager({ users }) {
     const [open, setOpen] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
+    const [userToDelete, setUserToDelete] = useState(null);
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } =
         useForm({
@@ -50,6 +51,8 @@ export default function UserManager({ users }) {
             password_confirmation: '',
             status: 'active',
         });
+
+    const { delete: destroy, processing: deleting } = useForm({});
 
     const openCreateDialog = () => {
         setEditingUser(null);
@@ -100,6 +103,17 @@ export default function UserManager({ users }) {
         }
     };
 
+    const confirmDelete = () => {
+        if (!userToDelete) {
+            return;
+        }
+
+        destroy(UserController.destroy.url(userToDelete.id), {
+            preserveScroll: true,
+            onSuccess: () => setUserToDelete(null),
+        });
+    };
+
     return (
         <>
             <Head title="Users" />
@@ -144,6 +158,7 @@ export default function UserManager({ users }) {
                                         variant="outline"
                                         size="icon"
                                         disabled={user.role === 'administrator'}
+                                        onClick={() => setUserToDelete(user)}
                                     >
                                         <Trash stroke="#FF2400" />
                                     </Button>
@@ -160,14 +175,9 @@ export default function UserManager({ users }) {
                         <DialogHeader>
                             <DialogTitle>
                                 {editingUser
-                                    ? 'Ubah Data Pegawai'
+                                    ? 'Ubah Pegawai'
                                     : 'Tambah Pegawai Baru'}
                             </DialogTitle>
-                            <DialogDescription>
-                                {editingUser
-                                    ? 'Perbarui data pegawai yang dipilih.'
-                                    : 'Lengkapi data pegawai yang akan ditambahkan.'}
-                            </DialogDescription>
                         </DialogHeader>
 
                         <div className="flex flex-col gap-4">
@@ -316,6 +326,43 @@ export default function UserManager({ users }) {
                             </Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={Boolean(userToDelete)}
+                onOpenChange={(nextOpen) => {
+                    if (!nextOpen) {
+                        setUserToDelete(null);
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Hapus Pegawai</DialogTitle>
+                        <DialogDescription>
+                            Yakin ingin menghapus {userToDelete?.name}? Tindakan
+                            ini tidak dapat dibatalkan.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setUserToDelete(null)}
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={confirmDelete}
+                            disabled={deleting}
+                        >
+                            Hapus
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>
