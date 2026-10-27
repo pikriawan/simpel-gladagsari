@@ -13,6 +13,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('user-manager', [UserController::class, 'store'])->name('user-manager.store');
         Route::put('user-manager/{user}', [UserController::class, 'update'])->name('user-manager.update');
         Route::delete('user-manager/{user}', [UserController::class, 'destroy'])->name('user-manager.destroy');
+        Route::post('user-manager/{user}/two-factor', [UserController::class, 'enableTwoFactor'])->name('user-manager.two-factor.enable');
+        Route::post('user-manager/{user}/two-factor/confirm', [UserController::class, 'confirmTwoFactor'])->name('user-manager.two-factor.confirm');
+        Route::delete('user-manager/{user}/two-factor', [UserController::class, 'disableTwoFactor'])->name('user-manager.two-factor.disable');
     });
 });
 

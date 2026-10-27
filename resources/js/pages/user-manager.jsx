@@ -1,9 +1,10 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useHttp, useForm } from '@inertiajs/react';
 import { ShieldCheck, SquarePen, Trash, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 import UserController from '@/actions/App/Http/Controllers/UserController';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -53,6 +54,95 @@ export default function UserManager({ users }) {
         });
 
     const { delete: destroy, processing: deleting } = useForm({});
+
+    const [twoFactorUser, setTwoFactorUser] = useState(null);
+    const [qrCodeSvg, setQrCodeSvg] = useState(null);
+    const [manualSetupKey, setManualSetupKey] = useState(null);
+
+    const twoFactorForm = useHttp({ code: '' });
+
+    const { submit: enableTwoFactorRequest, processing: enablingTwoFactor } =
+        useHttp();
+    const { submit: disableTwoFactorRequest, processing: disablingTwoFactor } =
+        useHttp();
+
+    const openTwoFactorDialog = (user) => {
+        setTwoFactorUser(user);
+        setQrCodeSvg(null);
+        setManualSetupKey(null);
+        twoFactorForm.reset();
+        twoFactorForm.clearErrors();
+    };
+
+    const closeTwoFactorDialog = () => {
+        setTwoFactorUser(null);
+        setQrCodeSvg(null);
+        setManualSetupKey(null);
+        twoFactorForm.reset();
+        twoFactorForm.clearErrors();
+    };
+
+    const generateQrCode = async () => {
+        if (!twoFactorUser) {
+            return;
+        }
+
+        try {
+            const response = await enableTwoFactorRequest(
+                UserController.enableTwoFactor(twoFactorUser.id),
+            );
+
+            setQrCodeSvg(response.svg);
+            setManualSetupKey(response.secretKey);
+        } catch {
+            // Keep the dialog usable even if QR generation fails.
+        }
+    };
+
+    const confirmTwoFactor = async () => {
+        if (!twoFactorUser) {
+            return;
+        }
+
+        try {
+            await twoFactorForm.submit(
+                UserController.confirmTwoFactor(twoFactorUser.id),
+            );
+
+            setTwoFactorUser({
+                ...twoFactorUser,
+                two_factor_confirmed_at: new Date().toISOString(),
+            });
+            setQrCodeSvg(null);
+            setManualSetupKey(null);
+            twoFactorForm.reset();
+            twoFactorForm.clearErrors();
+        } catch {
+            // Validation errors are exposed through twoFactorForm.errors.
+        }
+    };
+
+    const disableTwoFactor = async () => {
+        if (!twoFactorUser) {
+            return;
+        }
+
+        try {
+            await disableTwoFactorRequest(
+                UserController.disableTwoFactor(twoFactorUser.id),
+            );
+
+            setTwoFactorUser({
+                ...twoFactorUser,
+                two_factor_confirmed_at: null,
+                two_factor_secret: null,
+            });
+            setQrCodeSvg(null);
+            setManualSetupKey(null);
+        } catch {
+            // Keep the dialog usable if disabling fails.
+        }
+    };
 
     const openCreateDialog = () => {
         setEditingUser(null);
@@ -144,7 +234,13 @@ export default function UserManager({ users }) {
                                 <TableCell>{user.role}</TableCell>
                                 <TableCell>{user.status}</TableCell>
                                 <TableCell className="flex justify-end gap-2">
-                                    <Button variant="outline" size="icon">
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() =>
+                                            openTwoFactorDialog(user)
+                                        }
+                                    >
                                         <ShieldCheck />
                                     </Button>
                                     <Button
@@ -362,6 +458,126 @@ export default function UserManager({ users }) {
                         >
                             Hapus
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog
+                open={Boolean(twoFactorUser)}
+                onOpenChange={(nextOpen) => {
+                    if (!nextOpen) {
+                        closeTwoFactorDialog();
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Verifikasi 2 Langkah</DialogTitle>
+                        <DialogDescription>
+                            {twoFactorUser?.name}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <Badge
+                                variant={
+                                    twoFactorUser?.two_factor_confirmed_at
+                                        ? 'default'
+                                        : 'destructive'
+                                }
+                            >
+                                {twoFactorUser?.two_factor_confirmed_at
+                                    ? 'Verifikasi 2 Langkah aktif'
+                                    : 'Verifikasi 2 Langkah tidak aktif'}
+                            </Badge>
+                        </div>
+
+                        {!twoFactorUser?.two_factor_confirmed_at && (
+                            <>
+                                <Button
+                                    type="button"
+                                    onClick={generateQrCode}
+                                    disabled={enablingTwoFactor}
+                                >
+                                    Generate QR Code
+                                </Button>
+
+                                {qrCodeSvg && (
+                                    <div className='flex justify-center'>
+                                        <div
+                                            className="p-4 bg-white"
+                                            dangerouslySetInnerHTML={{
+                                                __html: qrCodeSvg,
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                {manualSetupKey && (
+                                    <p className="text-sm break-all text-muted-foreground">
+                                        Kunci manual: {manualSetupKey}
+                                    </p>
+                                )}
+
+                                {qrCodeSvg && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="two_factor_code">
+                                            Kode OTP
+                                        </Label>
+                                        <Input
+                                            id="two_factor_code"
+                                            value={twoFactorForm.data.code}
+                                            onChange={(event) =>
+                                                twoFactorForm.setData(
+                                                    'code',
+                                                    event.target.value,
+                                                )
+                                            }
+                                            placeholder="Masukkan kode OTP"
+                                            inputMode="numeric"
+                                        />
+                                        <InputError
+                                            message={twoFactorForm.errors.code}
+                                        />
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {twoFactorUser?.two_factor_confirmed_at && (
+                            <Button
+                                type="button"
+                                variant="destructive"
+                                onClick={disableTwoFactor}
+                                disabled={disablingTwoFactor}
+                            >
+                                Nonaktifkan 2FA
+                            </Button>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={closeTwoFactorDialog}
+                        >
+                            Tutup
+                        </Button>
+                        {!twoFactorUser?.two_factor_confirmed_at && (
+                            <Button
+                                type="button"
+                                onClick={confirmTwoFactor}
+                                disabled={
+                                    twoFactorForm.processing ||
+                                    !twoFactorForm.data.code ||
+                                    !qrCodeSvg
+                                }
+                            >
+                                Lanjutkan
+                            </Button>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

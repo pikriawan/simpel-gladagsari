@@ -3,10 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
+use Laravel\Fortify\Actions\ConfirmTwoFactorAuthentication;
+use Laravel\Fortify\Actions\DisableTwoFactorAuthentication;
+use Laravel\Fortify\Actions\EnableTwoFactorAuthentication;
+use Laravel\Fortify\Fortify;
 
 class UserController extends Controller
 {
@@ -86,6 +92,54 @@ class UserController extends Controller
         ]);
 
         return back();
+    }
+
+    /**
+     * Enable two-factor authentication for the specified user.
+     */
+    public function enableTwoFactor(User $user, EnableTwoFactorAuthentication $enable): JsonResponse
+    {
+        $enable($user);
+
+        $user->refresh();
+
+        return response()->json([
+            'svg' => $user->twoFactorQrCodeSvg(),
+            'url' => $user->twoFactorQrCodeUrl(),
+            'secretKey' => Fortify::currentEncrypter()->decrypt($user->two_factor_secret),
+        ]);
+    }
+
+    /**
+     * Confirm two-factor authentication for the specified user.
+     */
+    public function confirmTwoFactor(Request $request, User $user, ConfirmTwoFactorAuthentication $confirm): JsonResponse
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string'],
+        ]);
+
+        try {
+            $confirm($user, $validated['code']);
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages($exception->errors());
+        }
+
+        return response()->json([
+            'message' => __('Verifikasi 2 faktor berhasil diaktifkan.'),
+        ]);
+    }
+
+    /**
+     * Disable two-factor authentication for the specified user.
+     */
+    public function disableTwoFactor(User $user, DisableTwoFactorAuthentication $disable): JsonResponse
+    {
+        $disable($user);
+
+        return response()->json([
+            'message' => __('Verifikasi 2 faktor berhasil dinonaktifkan.'),
+        ]);
     }
 
     /**
