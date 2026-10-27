@@ -8,8 +8,9 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::inertia('dashboard', 'dashboard')->name('dashboard');
 
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware('role:administrator')->group(function () {
         Route::get('user-manager', [UserController::class, 'index'])->name('user-manager');
+        Route::post('user-manager', [UserController::class, 'store'])->name('user-manager.store');
     });
 });
 
