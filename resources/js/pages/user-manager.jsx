@@ -237,6 +237,7 @@ export default function UserManager({ users }) {
                                     <Button
                                         variant="outline"
                                         size="icon"
+                                        disabled={user.role === 'administrator'}
                                         onClick={() =>
                                             openTwoFactorDialog(user)
                                         }

@@ -99,6 +99,8 @@ class UserController extends Controller
      */
     public function enableTwoFactor(User $user, EnableTwoFactorAuthentication $enable): JsonResponse
     {
+        abort_if($user->role === 'administrator', 403, 'Verifikasi 2 faktor tidak dapat diaktifkan untuk administrator.');
+
         $enable($user);
 
         $user->refresh();
