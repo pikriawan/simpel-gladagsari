@@ -32,11 +32,6 @@ import {
 } from '@/components/ui/table';
 import { userManager } from '@/routes';
 
-const roles = [
-    { value: 'administrator', label: 'Administrator' },
-    { value: 'service', label: 'Pelayanan' },
-];
-
 const statuses = [
     { value: 'active', label: 'Aktif' },
     { value: 'inactive', label: 'Tidak aktif' },
@@ -44,34 +39,63 @@ const statuses = [
 
 export default function UserManager({ users }) {
     const [open, setOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
 
-    const { data, setData, post, processing, errors, reset, clearErrors } =
+    const { data, setData, post, put, processing, errors, reset, clearErrors } =
         useForm({
             name: '',
             nip: '',
             email: '',
             password: '',
             password_confirmation: '',
-            role: 'service',
             status: 'active',
         });
+
+    const openCreateDialog = () => {
+        setEditingUser(null);
+        reset();
+        clearErrors();
+        setOpen(true);
+    };
+
+    const openEditDialog = (user) => {
+        setEditingUser(user);
+        clearErrors();
+        setData({
+            name: user.name ?? '',
+            nip: user.nip ?? '',
+            email: user.email,
+            password: '',
+            password_confirmation: '',
+            status: user.status,
+        });
+        setOpen(true);
+    };
 
     const submit = (event) => {
         event.preventDefault();
 
-        post(UserController.store.url(), {
+        const options = {
             preserveScroll: true,
             onSuccess: () => {
                 setOpen(false);
+                setEditingUser(null);
                 reset();
             },
-        });
+        };
+
+        if (editingUser) {
+            put(UserController.update.url(editingUser.id), options);
+        } else {
+            post(UserController.store.url(), options);
+        }
     };
 
     const handleOpenChange = (nextOpen) => {
         setOpen(nextOpen);
 
         if (!nextOpen) {
+            setEditingUser(null);
             clearErrors();
         }
     };
@@ -81,7 +105,7 @@ export default function UserManager({ users }) {
             <Head title="Users" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <div className="flex">
-                    <Button onClick={() => setOpen(true)}>
+                    <Button onClick={openCreateDialog}>
                         <UserPlus />
                         Tambah pegawai baru
                     </Button>
@@ -109,10 +133,18 @@ export default function UserManager({ users }) {
                                     <Button variant="outline" size="icon">
                                         <ShieldCheck />
                                     </Button>
-                                    <Button variant="outline" size="icon">
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => openEditDialog(user)}
+                                    >
                                         <SquarePen />
                                     </Button>
-                                    <Button variant="outline" size="icon">
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        disabled={user.role === 'administrator'}
+                                    >
                                         <Trash stroke="#FF2400" />
                                     </Button>
                                 </TableCell>
@@ -126,7 +158,16 @@ export default function UserManager({ users }) {
                 <DialogContent className="sm:max-w-lg">
                     <form onSubmit={submit} className="space-y-4">
                         <DialogHeader>
-                            <DialogTitle>Tambah Pegawai Baru</DialogTitle>
+                            <DialogTitle>
+                                {editingUser
+                                    ? 'Ubah Data Pegawai'
+                                    : 'Tambah Pegawai Baru'}
+                            </DialogTitle>
+                            <DialogDescription>
+                                {editingUser
+                                    ? 'Perbarui data pegawai yang dipilih.'
+                                    : 'Lengkapi data pegawai yang akan ditambahkan.'}
+                            </DialogDescription>
                         </DialogHeader>
 
                         <div className="flex flex-col gap-4">
@@ -182,69 +223,46 @@ export default function UserManager({ users }) {
                             <InputError message={errors.email} />
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="grid gap-2">
-                                <Label htmlFor="role">Role</Label>
-                                <Select
-                                    value={data.role}
-                                    onValueChange={(value) =>
-                                        setData('role', value)
-                                    }
+                        <div className="grid gap-2">
+                            <Label htmlFor="status">Status</Label>
+                            <Select
+                                value={data.status}
+                                onValueChange={(value) =>
+                                    setData('status', value)
+                                }
+                                disabled={editingUser?.role === 'administrator'}
+                            >
+                                <SelectTrigger
+                                    id="status"
+                                    className="w-full"
+                                    aria-invalid={Boolean(errors.status)}
                                 >
-                                    <SelectTrigger
-                                        id="role"
-                                        className="w-full"
-                                        aria-invalid={Boolean(errors.role)}
-                                    >
-                                        <SelectValue placeholder="Pilih role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {roles.map((role) => (
-                                            <SelectItem
-                                                key={role.value}
-                                                value={role.value}
-                                            >
-                                                {role.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={errors.role} />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="status">Status</Label>
-                                <Select
-                                    value={data.status}
-                                    onValueChange={(value) =>
-                                        setData('status', value)
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="status"
-                                        className="w-full"
-                                        aria-invalid={Boolean(errors.status)}
-                                    >
-                                        <SelectValue placeholder="Pilih status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {statuses.map((status) => (
-                                            <SelectItem
-                                                key={status.value}
-                                                value={status.value}
-                                            >
-                                                {status.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <InputError message={errors.status} />
-                            </div>
+                                    <SelectValue placeholder="Pilih status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {statuses.map((status) => (
+                                        <SelectItem
+                                            key={status.value}
+                                            value={status.value}
+                                        >
+                                            {status.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {editingUser?.role === 'administrator' && (
+                                <p className="text-sm text-muted-foreground">
+                                    Status administrator tidak dapat diubah.
+                                </p>
+                            )}
+                            <InputError message={errors.status} />
                         </div>
 
                         <div className="flex flex-col gap-4">
                             <div className="grid gap-2">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">
+                                    {editingUser ? 'Password baru' : 'Password'}
+                                </Label>
                                 <PasswordInput
                                     id="password"
                                     name="password"
@@ -252,9 +270,13 @@ export default function UserManager({ users }) {
                                     onChange={(event) =>
                                         setData('password', event.target.value)
                                     }
-                                    placeholder="Password"
+                                    placeholder={
+                                        editingUser
+                                            ? 'Kosongkan jika tidak diubah'
+                                            : 'Password'
+                                    }
                                     autoComplete="new-password"
-                                    required
+                                    required={!editingUser}
                                     aria-invalid={Boolean(errors.password)}
                                 />
                                 <InputError message={errors.password} />
@@ -276,7 +298,7 @@ export default function UserManager({ users }) {
                                     }
                                     placeholder="Konfirmasi password"
                                     autoComplete="new-password"
-                                    required
+                                    required={!editingUser}
                                 />
                             </div>
                         </div>
@@ -290,7 +312,7 @@ export default function UserManager({ users }) {
                                 Batal
                             </Button>
                             <Button type="submit" disabled={processing}>
-                                Simpan
+                                {editingUser ? 'Perbarui' : 'Simpan'}
                             </Button>
                         </DialogFooter>
                     </form>
