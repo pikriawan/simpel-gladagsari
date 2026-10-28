@@ -182,11 +182,11 @@ export default function LetterPreview({ form = {}, template = {} }) {
                         Boyolali, memberikan izin / dispensasi kepada pemohon,
                         untuk melangsungkan pernikahan di Kantor Urusan Agama
                         Kecamatan Gladagsari pada hari :{' '}
-                        <strong>
+                        <span>
                             {display(
                                 fmtDateDay(form.marriageDate),
                             ).toUpperCase()}
-                        </strong>{' '}
+                        </span>{' '}
                         dengan seorang **) :
                     </p>
 
@@ -248,11 +248,11 @@ export default function LetterPreview({ form = {}, template = {} }) {
                         </div>
                     )}
                     <div className="preview__signature-space" />
-                    <div className="preview__signer">
-                        {display(config.namaPejabat)}
+                    <div className="preview__signer whitespace-nowrap">
+                        {display(config.namaPejabat?.replace(/[\r\n]+/g, ' '))}
                     </div>
                     {config.pangkat && <div>{config.pangkat}</div>}
-                    <div>NIP. {display(config.nipPejabat)}</div>
+                    <div className="whitespace-nowrap">NIP. {display(config.nipPejabat)}</div>
                 </footer>
             </article>
         </div>

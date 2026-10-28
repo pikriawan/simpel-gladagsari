@@ -4,10 +4,11 @@ import {
     setLayoutProps,
     resetLayoutProps,
 } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Printer } from 'lucide-react';
 import {
     editor,
+    loadToEditor,
     store as storeMarriageDispensation,
 } from '@/routes/marriage-dispensation';
 import { Button } from '@/components/ui/button';
@@ -62,23 +63,59 @@ const EMPTY_FORM = {
     partnerAddress: '',
 };
 
-const subVillages = ['Belang Kidul, Kaligentong', 'Tempel, Gladagsari'];
+import { getAllSubvillagesList } from '@/lib/village-data';
+import { getStoredTemplateSettings } from '@/lib/template-settings';
 
-export default function Editor() {
-    const [form, setForm] = useState(() => ({ ...EMPTY_FORM }));
-    const formRef = useRef(form);
+function recordToForm(record) {
+    if (!record) return { ...EMPTY_FORM };
+    return {
+        letterNumber:           record.letter_number           ?? '',
+        villageName:            record.village_name            ?? '',
+        referenceLetterNumber:  record.reference_letter_number ?? '',
+        letterDate:             record.letter_date             ?? '',
+        applicantName:          record.applicant_name          ?? '',
+        applicantBirthPlaceDate:record.applicant_birth_place_date ?? '',
+        subvillage:             record.subvillage              ?? '',
+        rt:                     record.rt                      ?? '',
+        rw:                     record.rw                      ?? '',
+        marriageDate:           record.marriage_date           ?? '',
+        partnerName:            record.partner_name            ?? '',
+        partnerBirthPlaceDate:  record.partner_birth_place_date ?? '',
+        religion:               record.religion                ?? '',
+        partnerAddress:         record.partner_address         ?? '',
+    };
+}
+
+export default function Editor({ record }) {
+    const [form, setForm] = useState(() => recordToForm(record));
+    const [subVillages, setSubVillages] = useState(() => getAllSubvillagesList());
+    const [template, setTemplate] = useState(() => getStoredTemplateSettings());
 
     useEffect(() => {
-        formRef.current = form;
-    }, [form]);
+        const updateList = () => setSubVillages(getAllSubvillagesList());
+        const updateTemplate = () => setTemplate(getStoredTemplateSettings());
+        window.addEventListener('village_data_updated', updateList);
+        window.addEventListener('template_settings_updated', updateTemplate);
+        return () => {
+            window.removeEventListener('village_data_updated', updateList);
+            window.removeEventListener('template_settings_updated', updateTemplate);
+        };
+    }, []);
 
-    const saveAndPrint = () => {
-        router.post(storeMarriageDispensation().url, formRef.current, {
+    // Reset form setiap kali record berubah (navigasi dari riwayat)
+    useEffect(() => {
+        setForm(recordToForm(record));
+    }, [record]);
+
+    // saveAndPrint selalu membaca nilai form terbaru
+    const saveAndPrint = useCallback(() => {
+        router.post(storeMarriageDispensation().url, form, {
             preserveScroll: true,
             onSuccess: () => window.print(),
         });
-    };
+    }, [form]);
 
+    // Perbarui tombol di header setiap kali saveAndPrint berubah
     useEffect(() => {
         setLayoutProps({
             actions: (
@@ -90,7 +127,7 @@ export default function Editor() {
         });
 
         return () => resetLayoutProps();
-    }, []);
+    }, [saveAndPrint]);
 
     const bind = (key) => ({
         value: form[key],
@@ -308,7 +345,7 @@ export default function Editor() {
                     </form>
 
                     <div className="min-h-0 overflow-hidden">
-                        <LetterPreview form={form} />
+                        <LetterPreview form={form} template={template} />
                     </div>
                 </div>
             </div>
