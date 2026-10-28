@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MarriageDispensationController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +17,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('user-manager/{user}/two-factor', [UserController::class, 'enableTwoFactor'])->name('user-manager.two-factor.enable');
         Route::post('user-manager/{user}/two-factor/confirm', [UserController::class, 'confirmTwoFactor'])->name('user-manager.two-factor.confirm');
         Route::delete('user-manager/{user}/two-factor', [UserController::class, 'disableTwoFactor'])->name('user-manager.two-factor.disable');
+    });
+
+    Route::middleware('role:service')->group(function () {
+        Route::inertia('marriage-dispensation/editor', 'marriage-dispensation/editor')->name('marriage-dispensation.editor');
+        Route::inertia('marriage-dispensation/history', 'marriage-dispensation/history')->name('marriage-dispensation.history');
+        Route::inertia('marriage-dispensation/village-data', 'marriage-dispensation/village-data')->name('marriage-dispensation.village-data');
+        Route::inertia('marriage-dispensation/template-settings', 'marriage-dispensation/template-settings')->name('marriage-dispensation.template-settings');
+        Route::post('marriage-dispensation', [MarriageDispensationController::class, 'store'])->name('marriage-dispensation.store');
     });
 });
 

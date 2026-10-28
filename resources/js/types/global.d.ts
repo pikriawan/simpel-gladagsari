@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Auth } from '@/types/auth';
 
 declare module 'react' {
@@ -13,6 +14,11 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             [key: string]: unknown;
+        };
+        layoutProps: {
+            title?: string;
+            description?: string;
+            actions?: ReactNode;
         };
     }
 }

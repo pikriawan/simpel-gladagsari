@@ -141,3 +141,195 @@
         @apply bg-background text-foreground;
     }
 }
+.preview-viewport {
+  width: 100%;
+  aspect-ratio: 210 / 297;
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--border), 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.preview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 210mm;
+  min-width: 210mm;
+  max-width: 210mm;
+  height: 297mm;
+  min-height: 297mm;
+  max-height: 297mm;
+  margin: 0;
+  padding: 20mm;
+  box-sizing: border-box;
+  background: #fff;
+  color: #000;
+  font: 12pt/1.28 Arial, sans-serif;
+  overflow: hidden;
+  transform-origin: top left;
+  display: flex;
+  flex-direction: column;
+}
+.preview--document { display: flex; flex-direction: column; }
+.preview__letterhead {
+  position: relative;
+  min-height: 40mm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: "Times New Roman", Georgia, serif;
+}
+.preview__letterhead--logo { padding-left: 0; }
+.preview__logo {
+  position: absolute;
+  left: 2mm;
+  top: 50%;
+  width: 100px;
+  height: 132px;
+  object-fit: contain;
+  transform: translateY(-50%);
+}
+.preview__letterhead-text {
+  width: calc(100% - 38mm);
+  margin-left: 38mm;
+  text-align: center;
+}
+.preview__institution {
+  font-size: 20pt;
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.preview__district {
+  margin-top: 2px;
+  font-size: 24pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.preview__address {
+  font-size: 11pt;
+  font-style: normal;
+  line-height: 1.3;
+}
+.preview__address a { color: #00e; text-decoration: underline; }
+.preview__rule {
+  margin-top: 3px;
+  border-top: 3px solid #000;
+  padding-top: 2px;
+}
+.preview__rule span {
+  display: block;
+  border-top: 1px solid #000;
+}
+.preview__title {
+  margin: 16px 0 10px;
+  text-align: center;
+}
+.preview__title h2 {
+  margin: 0;
+  font-size: 18pt;
+  font-weight: 400;
+  letter-spacing: .04em;
+  text-decoration: underline;
+}
+.preview__title div {
+  margin-top: 3px;
+  font-size: 12pt;
+}
+.preview__body {
+  font-size: 12pt;
+  line-height: 1.35;
+}
+.preview__legal {
+  margin-bottom: 8px;
+}
+.preview__legal ol,
+.preview__consideration ol {
+  margin: 2px 0 0;
+  padding-left: 1.5em;
+}
+.preview__consideration > ol {
+  margin-bottom: 6px;
+}
+.preview__details {
+  display: grid;
+  grid-template-columns: 145px 1fr;
+  column-gap: 4px;
+  margin: 4px 0 0 1.5em;
+}
+.preview__details dt,
+.preview__details dd {
+  margin: 0;
+  padding: 0 0 2px;
+  text-transform: uppercase;
+  font-size: 12pt;
+}
+.preview__details dt {
+  text-transform: none;
+}
+.preview__details dd {
+  display: flex;
+  gap: 6px;
+}
+.preview__colon {
+  flex-shrink: 0;
+}
+.preview__decision {
+  margin: 12px 0;
+  text-align: justify;
+}
+.preview__decision strong {
+  font-weight: 700;
+}
+.preview__partner {
+  margin-top: 6px;
+}
+.preview__reason {
+  margin-top: 6px;
+}
+.preview__closing {
+  margin: 8px 0 0;
+}
+.preview__signature {
+  width: 260px;
+  min-width: 0;
+  margin: auto 0 0 auto;
+  text-align: center;
+  font-size: 12pt;
+}
+.preview__signature-date {
+  margin-bottom: 4px;
+}
+.preview__sub-role {
+  margin-bottom: 2px;
+}
+.preview__signature-space {
+  height: 75px;
+}
+.preview__signer {
+  text-decoration: underline;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+@media print {
+  @page { size: A4 portrait; margin: 0; }
+  html, body, #root { width: 210mm !important; height: 297mm !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; background: #fff !important; }
+  body * { visibility: hidden !important; }
+  #printable-letter, #printable-letter * { visibility: visible !important; }
+  .preview-viewport { position: static !important; width: auto !important; height: auto !important; aspect-ratio: auto !important; border: 0 !important; box-shadow: none !important; overflow: visible !important; }
+  #printable-letter {
+    position: fixed !important; inset: 0 auto auto 0 !important;
+    width: 210mm !important; min-width: 210mm !important; max-width: 210mm !important;
+    height: 297mm !important; min-height: 297mm !important; max-height: 297mm !important;
+    margin: 0 !important; padding: 20mm !important;
+    overflow: hidden !important; border: 0 !important; box-shadow: none !important;
+    border-radius: 0 !important; background: #fff !important; color: #000 !important;
+    font: 12pt/1.28 Arial, sans-serif !important; box-sizing: border-box !important;
+    transform: none !important;
+  }
+}
