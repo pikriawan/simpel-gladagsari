@@ -64,8 +64,9 @@ export default function LetterPreview({ form = {}, template = {} }) {
     ];
     const logo = '/assets/boyolali.png';
     const emailMatch = headerLines[3].match(/^(.*?\bemail:\s*)([^\s,]+)(.*)$/i);
+    const applicantSubvillage = (form.subvillage || '').split(',')[0].trim();
     const applicantAddress = [
-        form.subvillage || '..........',
+        applicantSubvillage || '..........',
         `RT ${form.rt || '000'}/RW ${form.rw || '000'}`,
         `DESA ${(form.village || form.villageName || '..........').toUpperCase()}`,
         'KEC. GLADAGSARI',

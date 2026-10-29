@@ -268,14 +268,17 @@ export function getAllSubvillagesList(selectedVillageName = null) {
                 selectedVillageName.trim().toLowerCase(),
         );
         if (found) {
-            return (found.subvillages || []).map((s) => s.name);
+            return (found.subvillages || []).map(
+                (s) => `${s.name}, ${found.name}`,
+            );
         }
     }
     const list = [];
     data.forEach((v) => {
         (v.subvillages || []).forEach((s) => {
-            if (!list.includes(s.name)) {
-                list.push(s.name);
+            const entry = `${s.name}, ${v.name}`;
+            if (!list.includes(entry)) {
+                list.push(entry);
             }
         });
     });
@@ -285,10 +288,24 @@ export function getAllSubvillagesList(selectedVillageName = null) {
 export function getVillageBySubvillage(subvillageName) {
     if (!subvillageName) return null;
     const data = getStoredVillageData();
-    const query = subvillageName.trim().toLowerCase();
+    const parts = subvillageName.split(',').map((p) => p.trim());
+    const dukuhQuery = (parts[0] || '').toLowerCase();
+    const desaQuery = (parts[1] || '').toLowerCase();
+
+    if (desaQuery) {
+        const found = data.find(
+            (v) =>
+                v.name.trim().toLowerCase() === desaQuery &&
+                (v.subvillages || []).some(
+                    (s) => s.name.trim().toLowerCase() === dukuhQuery,
+                ),
+        );
+        if (found) return found.name;
+    }
+
     const found = data.find((v) =>
         (v.subvillages || []).some(
-            (s) => s.name.trim().toLowerCase() === query,
+            (s) => s.name.trim().toLowerCase() === dukuhQuery,
         ),
     );
     return found ? found.name : null;
