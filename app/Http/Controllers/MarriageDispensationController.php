@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MarriageDispensation;
+use App\Models\TemplateSetting;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -185,10 +186,22 @@ class MarriageDispensationController extends Controller
         ]);
     }
 
+    public function editor(): Response
+    {
+        return Inertia::render('marriage-dispensation/editor', [
+            'templateSettings' => TemplateSetting::query()
+                ->pluck('value', 'key')
+                ->toArray(),
+        ]);
+    }
+
     public function loadToEditor(MarriageDispensation $marriageDispensation): Response
     {
         return Inertia::render('marriage-dispensation/editor', [
             'record' => $marriageDispensation,
+            'templateSettings' => TemplateSetting::query()
+                ->pluck('value', 'key')
+                ->toArray(),
         ]);
     }
 

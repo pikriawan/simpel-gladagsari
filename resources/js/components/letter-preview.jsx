@@ -7,8 +7,6 @@ const DEFAULT_TEMPLATE = {
     baris2: 'KECAMATAN GLADAGSARI',
     baris3: 'Jl. Boyolali – Semarang KM 10 Gladagsari Boyolali Telp. (0276) 331345',
     baris4: 'website: gladagsarikec.boyolali.go.id, email: gladagsari@boyolali.go.id',
-    baris5: '',
-    logo: '',
     namaPejabat: '........................................',
     jabatanUtama: 'a.n. BUPATI BOYOLALI',
     subJabatan: 'CAMAT GLADAGSARI',
@@ -64,7 +62,7 @@ export default function LetterPreview({ form = {}, template = {} }) {
         config.baris3,
         config.baris4,
     ];
-    const logo = config.logo || '/assets/boyolali.png';
+    const logo = '/assets/boyolali.png';
     const emailMatch = headerLines[3].match(/^(.*?\bemail:\s*)([^\s,]+)(.*)$/i);
     const applicantAddress = [
         form.subvillage || '..........',
@@ -145,7 +143,7 @@ export default function LetterPreview({ form = {}, template = {} }) {
                         <ol>
                             <li>
                                 Surat Pengantar dari Kepala{' '}
-                                {(form.village || form.villageName)
+                                {form.village || form.villageName
                                     ? `Desa ${form.village || form.villageName}`
                                     : 'Desa ..........'}{' '}
                                 Nomor: {display(form.referenceLetterNumber)}{' '}
@@ -252,7 +250,9 @@ export default function LetterPreview({ form = {}, template = {} }) {
                         {display(config.namaPejabat?.replace(/[\r\n]+/g, ' '))}
                     </div>
                     {config.pangkat && <div>{config.pangkat}</div>}
-                    <div className="whitespace-nowrap">NIP. {display(config.nipPejabat)}</div>
+                    <div className="whitespace-nowrap">
+                        NIP. {display(config.nipPejabat)}
+                    </div>
                 </footer>
             </article>
         </div>

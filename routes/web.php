@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\MarriageDispensationController;
+use App\Http\Controllers\TemplateSettingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,12 +21,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::middleware('role:service')->group(function () {
-        Route::inertia('marriage-dispensation/editor', 'marriage-dispensation/editor')->name('marriage-dispensation.editor');
+        Route::get('marriage-dispensation/editor', [MarriageDispensationController::class, 'editor'])->name('marriage-dispensation.editor');
         Route::get('marriage-dispensation/{marriageDispensation}/editor', [MarriageDispensationController::class, 'loadToEditor'])->name('marriage-dispensation.load-to-editor');
         Route::get('marriage-dispensation/history', [MarriageDispensationController::class, 'history'])->name('marriage-dispensation.history');
         Route::get('marriage-dispensation/export', [MarriageDispensationController::class, 'export'])->name('marriage-dispensation.export');
         Route::inertia('marriage-dispensation/village-data', 'marriage-dispensation/village-data')->name('marriage-dispensation.village-data');
-        Route::inertia('marriage-dispensation/template-settings', 'marriage-dispensation/template-settings')->name('marriage-dispensation.template-settings');
+        Route::get('marriage-dispensation/template-settings', [TemplateSettingController::class, 'index'])->name('marriage-dispensation.template-settings');
+        Route::post('marriage-dispensation/template-settings', [TemplateSettingController::class, 'store'])->name('marriage-dispensation.template-settings.store');
+        Route::delete('marriage-dispensation/template-settings', [TemplateSettingController::class, 'reset'])->name('marriage-dispensation.template-settings.reset');
         Route::post('marriage-dispensation', [MarriageDispensationController::class, 'store'])->name('marriage-dispensation.store');
         Route::delete('marriage-dispensation/{marriageDispensation}', [MarriageDispensationController::class, 'destroy'])->name('marriage-dispensation.destroy');
     });

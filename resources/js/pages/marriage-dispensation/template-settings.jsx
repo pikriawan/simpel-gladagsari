@@ -1,7 +1,12 @@
-import { Head, resetLayoutProps, setLayoutProps } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import {
+    Head,
+    router,
+    resetLayoutProps,
+    setLayoutProps,
+} from '@inertiajs/react';
 import { editor, templateSettings } from '@/routes/marriage-dispensation';
+import { useEffect, useRef, useState } from 'react';
+import { RotateCcw, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,11 +18,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import LetterPreview from '@/components/letter-preview';
-import {
-    getStoredTemplateSettings,
-    saveStoredTemplateSettings,
-    resetStoredTemplateSettings,
-} from '@/lib/template-settings';
+import { DEFAULT_TEMPLATE_SETTINGS } from '@/lib/template-settings';
 
 const SAMPLE_PREVIEW_FORM = {
     letterNumber: '001',
@@ -30,32 +31,53 @@ const SAMPLE_PREVIEW_FORM = {
     subvillage: 'Candirejo',
     rt: '001',
     rw: '001',
-    marriageDate: new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10),
+    marriageDate: new Date(Date.now() + 86400000 * 7)
+        .toISOString()
+        .slice(0, 10),
     partnerName: 'Annisa Putri',
     partnerBirthPlaceDate: 'Boyolali, 1 Januari 2006',
     religion: 'Islam',
-    partnerAddress: 'Dukuh Banjaran, RT 001/RW 001, Desa Candisari, Kec. Gladagsari',
+    partnerAddress:
+        'Dukuh Banjaran, RT 001/RW 001, Desa Candisari, Kec. Gladagsari',
 };
 
-export default function PengaturanTemplate() {
-    const [template, setTemplate] = useState(() => getStoredTemplateSettings());
+export default function PengaturanTemplate({ settings = {} }) {
+    const [template, setTemplate] = useState(() => ({
+        ...DEFAULT_TEMPLATE_SETTINGS,
+        ...settings,
+    }));
     const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
-    const fileInputRef = useRef(null);
+    const templateRef = useRef(template);
+
+    useEffect(() => {
+        templateRef.current = template;
+    }, [template]);
 
     // Header action: Reset default button
     useEffect(() => {
         setLayoutProps({
             actions: (
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsResetDialogOpen(true)}
-                    className="h-8 gap-1.5 px-3 text-xs"
-                >
-                    <RotateCcw className="size-3.5" />
-                    Reset default
-                </Button>
+                <>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsResetDialogOpen(true)}
+                        className="h-8 gap-1.5 px-3 text-xs"
+                    >
+                        <RotateCcw className="size-3.5" />
+                        Reset default
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSave}
+                        className="h-8 gap-1.5 px-3 text-xs"
+                    >
+                        <Save className="size-3.5" />
+                        Simpan
+                    </Button>
+                </>
             ),
         });
 
@@ -63,40 +85,38 @@ export default function PengaturanTemplate() {
     }, []);
 
     const handleChange = (key, value) => {
-        setTemplate((prev) => {
-            const next = { ...prev, [key]: value };
-            saveStoredTemplateSettings(next);
-            return next;
-        });
+        setTemplate((prev) => ({ ...prev, [key]: value }));
     };
 
-    const handleLogoChange = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const base64 = event.target?.result;
-            if (typeof base64 === 'string') {
-                handleChange('logo', base64);
-            }
-        };
-        reader.readAsDataURL(file);
-    };
-
-    const handleResetLogo = () => {
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-        handleChange('logo', '');
+    const handleSave = () => {
+        router.post(
+            '/marriage-dispensation/template-settings',
+            { settings: templateRef.current },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    window.dispatchEvent(
+                        new CustomEvent('template_settings_updated', {
+                            detail: templateRef.current,
+                        }),
+                    );
+                },
+            },
+        );
     };
 
     const handleConfirmReset = () => {
-        const defaults = resetStoredTemplateSettings();
-        setTemplate(defaults);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
+        router.delete('/marriage-dispensation/template-settings', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setTemplate({ ...DEFAULT_TEMPLATE_SETTINGS });
+                window.dispatchEvent(
+                    new CustomEvent('template_settings_updated', {
+                        detail: { ...DEFAULT_TEMPLATE_SETTINGS },
+                    }),
+                );
+            },
+        });
         setIsResetDialogOpen(false);
     };
 
@@ -172,30 +192,6 @@ export default function PengaturanTemplate() {
                                     }
                                     className="h-9 bg-background text-sm"
                                 />
-                            </div>
-
-                            <div className="flex flex-col gap-1.5">
-                                <label className="text-xs text-muted-foreground">
-                                    Logo lambang daerah
-                                </label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleLogoChange}
-                                        className="h-9 cursor-pointer bg-background text-xs file:cursor-pointer file:text-xs"
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={handleResetLogo}
-                                        className="h-9 shrink-0 gap-1.5 px-3 text-xs"
-                                    >
-                                        <RotateCcw className="size-3.5" />
-                                        Reset
-                                    </Button>
-                                </div>
                             </div>
                         </section>
 
@@ -355,7 +351,7 @@ export default function PengaturanTemplate() {
                     <div className="sticky top-6">
                         <div className="relative min-h-0 overflow-hidden rounded-md border border-border shadow-xs">
                             {/* Pita diagonal Pratinjau di sudut kanan atas */}
-                            <div className="pointer-events-none absolute -right-12 top-6 z-20 w-44 rotate-45 bg-zinc-400/90 py-1 text-center text-xs font-semibold tracking-wider text-white shadow-xs select-none backdrop-blur-xs">
+                            <div className="pointer-events-none absolute top-6 -right-12 z-20 w-44 rotate-45 bg-zinc-400/90 py-1 text-center text-xs font-semibold tracking-wider text-white shadow-xs backdrop-blur-xs select-none">
                                 Pratinjau
                             </div>
 

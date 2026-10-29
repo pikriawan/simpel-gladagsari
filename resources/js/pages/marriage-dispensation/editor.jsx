@@ -8,7 +8,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Printer } from 'lucide-react';
 import {
     editor,
-    loadToEditor,
     store as storeMarriageDispensation,
 } from '@/routes/marriage-dispensation';
 import { Button } from '@/components/ui/button';
@@ -68,7 +67,7 @@ import {
     getAllVillagesList,
     getVillageBySubvillage,
 } from '@/lib/village-data';
-import { getStoredTemplateSettings } from '@/lib/template-settings';
+import { DEFAULT_TEMPLATE_SETTINGS } from '@/lib/template-settings';
 
 function recordToForm(record) {
     if (!record) return { ...EMPTY_FORM };
@@ -82,30 +81,33 @@ function recordToForm(record) {
         sub = sub.split(',')[0].trim();
     }
     return {
-        letterNumber:           record.letter_number           ?? '',
-        village:                vil,
-        referenceLetterNumber:  record.reference_letter_number ?? '',
-        letterDate:             record.letter_date             ?? '',
-        applicantName:          record.applicant_name          ?? '',
-        applicantBirthPlaceDate:record.applicant_birth_place_date ?? '',
-        subvillage:             sub,
-        rt:                     record.rt                      ?? '',
-        rw:                     record.rw                      ?? '',
-        marriageDate:           record.marriage_date           ?? '',
-        partnerName:            record.partner_name            ?? '',
-        partnerBirthPlaceDate:  record.partner_birth_place_date ?? '',
-        religion:               record.religion                ?? '',
-        partnerAddress:         record.partner_address         ?? '',
+        letterNumber: record.letter_number ?? '',
+        village: vil,
+        referenceLetterNumber: record.reference_letter_number ?? '',
+        letterDate: record.letter_date ?? '',
+        applicantName: record.applicant_name ?? '',
+        applicantBirthPlaceDate: record.applicant_birth_place_date ?? '',
+        subvillage: sub,
+        rt: record.rt ?? '',
+        rw: record.rw ?? '',
+        marriageDate: record.marriage_date ?? '',
+        partnerName: record.partner_name ?? '',
+        partnerBirthPlaceDate: record.partner_birth_place_date ?? '',
+        religion: record.religion ?? '',
+        partnerAddress: record.partner_address ?? '',
     };
 }
 
-export default function Editor({ record }) {
+export default function Editor({ record, templateSettings = {} }) {
     const [form, setForm] = useState(() => recordToForm(record));
     const [villages, setVillages] = useState(() => getAllVillagesList());
     const [subVillages, setSubVillages] = useState(() =>
         getAllSubvillagesList(form.village),
     );
-    const [template, setTemplate] = useState(() => getStoredTemplateSettings());
+    const [template, setTemplate] = useState(() => ({
+        ...DEFAULT_TEMPLATE_SETTINGS,
+        ...templateSettings,
+    }));
 
     useEffect(() => {
         setSubVillages(getAllSubvillagesList(form.village));
@@ -116,12 +118,24 @@ export default function Editor({ record }) {
             setVillages(getAllVillagesList());
             setSubVillages(getAllSubvillagesList(form.village));
         };
-        const updateTemplate = () => setTemplate(getStoredTemplateSettings());
+        const updateTemplate = (event) => {
+            const next = event?.detail;
+            if (next) {
+                setTemplate((prev) => ({
+                    ...DEFAULT_TEMPLATE_SETTINGS,
+                    ...prev,
+                    ...next,
+                }));
+            }
+        };
         window.addEventListener('village_data_updated', updateList);
         window.addEventListener('template_settings_updated', updateTemplate);
         return () => {
             window.removeEventListener('village_data_updated', updateList);
-            window.removeEventListener('template_settings_updated', updateTemplate);
+            window.removeEventListener(
+                'template_settings_updated',
+                updateTemplate,
+            );
         };
     }, [form.village]);
 
@@ -278,10 +292,17 @@ export default function Editor({ record }) {
                                                         ...current,
                                                         subvillage: value ?? '',
                                                     };
-                                                    if (!current.village && value) {
-                                                        const detected = getVillageBySubvillage(value);
+                                                    if (
+                                                        !current.village &&
+                                                        value
+                                                    ) {
+                                                        const detected =
+                                                            getVillageBySubvillage(
+                                                                value,
+                                                            );
                                                         if (detected) {
-                                                            next.village = detected;
+                                                            next.village =
+                                                                detected;
                                                         }
                                                     }
                                                     return next;
@@ -294,7 +315,8 @@ export default function Editor({ record }) {
                                                 onChange={(e) =>
                                                     setForm((current) => ({
                                                         ...current,
-                                                        subvillage: e.target.value,
+                                                        subvillage:
+                                                            e.target.value,
                                                     }))
                                                 }
                                             />
