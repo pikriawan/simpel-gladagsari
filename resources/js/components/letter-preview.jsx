@@ -69,7 +69,7 @@ export default function LetterPreview({ form = {}, template = {} }) {
     const applicantAddress = [
         form.subvillage || '..........',
         `RT ${form.rt || '000'}/RW ${form.rw || '000'}`,
-        `DESA ${(form.villageName || '..........').toUpperCase()}`,
+        `DESA ${(form.village || form.villageName || '..........').toUpperCase()}`,
         'KEC. GLADAGSARI',
     ].join(', ');
     const partnerAddress = form.partnerAddress || '..........';
@@ -145,8 +145,8 @@ export default function LetterPreview({ form = {}, template = {} }) {
                         <ol>
                             <li>
                                 Surat Pengantar dari Kepala{' '}
-                                {form.villageName
-                                    ? `Desa ${form.villageName}`
+                                {(form.village || form.villageName)
+                                    ? `Desa ${form.village || form.villageName}`
                                     : 'Desa ..........'}{' '}
                                 Nomor: {display(form.referenceLetterNumber)}{' '}
                                 bahwa berdasarkan permohonan dari seorang *) :

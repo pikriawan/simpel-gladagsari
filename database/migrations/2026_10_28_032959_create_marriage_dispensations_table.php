@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('marriage_dispensations', function (Blueprint $table) {
             $table->id();
             $table->string('letter_number')->nullable();
-            $table->string('village_name')->nullable();
+            $table->string('village')->nullable();
             $table->string('reference_letter_number')->nullable();
             $table->date('letter_date')->nullable();
             $table->string('applicant_name')->nullable();

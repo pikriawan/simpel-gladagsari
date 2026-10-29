@@ -254,13 +254,42 @@ export function resetStoredVillageData() {
     return DEFAULT_VILLAGE_DATA;
 }
 
-export function getAllSubvillagesList() {
+export function getAllVillagesList() {
     const data = getStoredVillageData();
+    return data.map((v) => v.name);
+}
+
+export function getAllSubvillagesList(selectedVillageName = null) {
+    const data = getStoredVillageData();
+    if (selectedVillageName) {
+        const found = data.find(
+            (v) =>
+                v.name.trim().toLowerCase() ===
+                selectedVillageName.trim().toLowerCase(),
+        );
+        if (found) {
+            return (found.subvillages || []).map((s) => s.name);
+        }
+    }
     const list = [];
     data.forEach((v) => {
         (v.subvillages || []).forEach((s) => {
-            list.push(`${s.name}, ${v.name}`);
+            if (!list.includes(s.name)) {
+                list.push(s.name);
+            }
         });
     });
     return list;
+}
+
+export function getVillageBySubvillage(subvillageName) {
+    if (!subvillageName) return null;
+    const data = getStoredVillageData();
+    const query = subvillageName.trim().toLowerCase();
+    const found = data.find((v) =>
+        (v.subvillages || []).some(
+            (s) => s.name.trim().toLowerCase() === query,
+        ),
+    );
+    return found ? found.name : null;
 }

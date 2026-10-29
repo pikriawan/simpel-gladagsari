@@ -42,12 +42,12 @@ class MarriageDispensationSeeder extends Seeder
         foreach ($data as $item) {
             MarriageDispensation::create([
                 'letter_number'            => $item['letterNumber'],
-                'village_name'             => $item['villageName'],
+                'village'                  => $item['villageName'],
                 'reference_letter_number'  => null,
                 'letter_date'              => null,
                 'applicant_name'           => $item['applicantName'],
                 'applicant_birth_place_date' => 'Boyolali, 1 Januari 2006',
-                'subvillage'               => 'Belang Kidul, ' . $item['villageName'],
+                'subvillage'               => 'Belang Kidul',
                 'rt'                       => '001',
                 'rw'                       => '001',
                 'marriage_date'            => $item['marriageDate'],

@@ -21,12 +21,13 @@ import {
 
 const SAMPLE_PREVIEW_FORM = {
     letterNumber: '001',
+    village: 'Candisari',
     villageName: 'Candisari',
     referenceLetterNumber: '474/123/2026',
     letterDate: new Date().toISOString().slice(0, 10),
     applicantName: 'Muhammad Rifqi Khoirurrozaq',
     applicantBirthPlaceDate: 'Boyolali, 1 Januari 2006',
-    subvillage: 'Dukuh Candirejo',
+    subvillage: 'Candirejo',
     rt: '001',
     rw: '001',
     marriageDate: new Date(Date.now() + 86400000 * 7).toISOString().slice(0, 10),

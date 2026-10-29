@@ -25,7 +25,8 @@ class MarriageDispensationController extends Controller
                 $q->where('applicant_name', 'like', "%{$search}%")
                     ->orWhere('partner_name', 'like', "%{$search}%")
                     ->orWhere('letter_number', 'like', "%{$search}%")
-                    ->orWhere('village_name', 'like', "%{$search}%");
+                    ->orWhere('village', 'like', "%{$search}%")
+                    ->orWhere('subvillage', 'like', "%{$search}%");
             });
         }
 
@@ -92,18 +93,20 @@ class MarriageDispensationController extends Controller
         $rowNum = 3;
         foreach ($records as $record) {
             $alamatPemohon = '-';
+            $alamatParts = [];
             if (! empty($record->subvillage)) {
-                $alamatPemohon = mb_strtoupper($record->subvillage);
-                if (! empty($record->rt) || ! empty($record->rw)) {
-                    $alamatPemohon .= ', RT '.str_pad($record->rt ?? '0', 3, '0', STR_PAD_LEFT)
-                        .'/RW '.str_pad($record->rw ?? '0', 3, '0', STR_PAD_LEFT);
-                }
-                if (! empty($record->village_name)) {
-                    $alamatPemohon .= ', Desa '.mb_strtoupper($record->village_name);
-                }
-                $alamatPemohon .= ', Kec. Gladagsari';
-            } elseif (! empty($record->village_name)) {
-                $alamatPemohon = 'Desa '.mb_strtoupper($record->village_name).', Kec. Gladagsari';
+                $alamatParts[] = mb_strtoupper($record->subvillage);
+            }
+            if (! empty($record->rt) || ! empty($record->rw)) {
+                $alamatParts[] = 'RT '.str_pad($record->rt ?? '0', 3, '0', STR_PAD_LEFT)
+                    .'/RW '.str_pad($record->rw ?? '0', 3, '0', STR_PAD_LEFT);
+            }
+            if (! empty($record->village)) {
+                $alamatParts[] = 'DESA '.mb_strtoupper($record->village);
+            }
+            if (! empty($alamatParts)) {
+                $alamatParts[] = 'KEC. GLADAGSARI';
+                $alamatPemohon = implode(', ', $alamatParts);
             }
 
             $tanggalSurat = '-';
@@ -117,7 +120,7 @@ class MarriageDispensationController extends Controller
             }
 
             $sheet->setCellValue("A{$rowNum}", $record->letter_number ?: '-');
-            $sheet->setCellValue("B{$rowNum}", $record->village_name ?: '-');
+            $sheet->setCellValue("B{$rowNum}", $record->village ?: '-');
             $sheet->setCellValue("C{$rowNum}", $record->reference_letter_number ?: '-');
             $sheet->setCellValue("D{$rowNum}", $tanggalSurat);
             $sheet->setCellValue("E{$rowNum}", $record->applicant_name ? mb_strtoupper($record->applicant_name) : '-');
@@ -193,6 +196,7 @@ class MarriageDispensationController extends Controller
     {
         $validated = $request->validate([
             'letterNumber' => ['nullable', 'string', 'max:255'],
+            'village' => ['nullable', 'string', 'max:255'],
             'villageName' => ['nullable', 'string', 'max:255'],
             'referenceLetterNumber' => ['nullable', 'string', 'max:255'],
             'letterDate' => ['nullable', 'date'],
@@ -210,7 +214,7 @@ class MarriageDispensationController extends Controller
 
         MarriageDispensation::create([
             'letter_number' => $validated['letterNumber'] ?? null,
-            'village_name' => $validated['villageName'] ?? null,
+            'village' => $validated['village'] ?? $validated['villageName'] ?? null,
             'reference_letter_number' => $validated['referenceLetterNumber'] ?? null,
             'letter_date' => $validated['letterDate'] ?? null,
             'applicant_name' => $validated['applicantName'] ?? null,

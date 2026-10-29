@@ -82,7 +82,9 @@ function DetailModal({ record, open, onClose, onDelete, onLoadToEditor }) {
     const applicantAddress = [
         record.subvillage,
         record.rt && record.rw ? `RT${record.rt}/RW${record.rw}` : null,
-        record.village_name ? `Desa ${record.village_name}` : null,
+        (record.village ?? record.village_name)
+            ? `Desa ${record.village ?? record.village_name}`
+            : null,
         'Kec. Gladagsari',
     ]
         .filter(Boolean)
@@ -100,7 +102,7 @@ function DetailModal({ record, open, onClose, onDelete, onLoadToEditor }) {
                     <h3 className="mb-1 text-sm font-semibold">Nomor Surat dan Tanggal</h3>
                     <div className="divide-y">
                         <DetailRow label="Nomor urut" value={record.letter_number} />
-                        <DetailRow label="Nama desa pengantar" value={record.village_name} />
+                        <DetailRow label="Nama desa pengantar" value={record.village ?? record.village_name} />
                         <DetailRow label="Nomor surat pengantar" value={record.reference_letter_number} />
                         <DetailRow label="Tanggal surat dikeluarkan" value={formatDate(record.letter_date)} />
                     </div>
@@ -310,7 +312,7 @@ export default function Riwayat({ records, filters }) {
                                         <TableCell>{record.applicant_name ?? '-'}</TableCell>
                                         <TableCell>{record.partner_name ?? '-'}</TableCell>
                                         <TableCell>{formatDate(record.marriage_date)}</TableCell>
-                                        <TableCell>{record.village_name ?? '-'}</TableCell>
+                                        <TableCell>{record.village ?? record.village_name ?? '-'}</TableCell>
                                         <TableCell className="text-xs text-muted-foreground">
                                             {formatDateTime(record.created_at)}
                                         </TableCell>

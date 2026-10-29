@@ -8,7 +8,7 @@ class MarriageDispensation extends Model
 {
     protected $fillable = [
         'letter_number',
-        'village_name',
+        'village',
         'reference_letter_number',
         'letter_date',
         'applicant_name',
@@ -22,4 +22,12 @@ class MarriageDispensation extends Model
         'religion',
         'partner_address',
     ];
+
+    /**
+     * Backward compatibility accessor for village_name.
+     */
+    public function getVillageNameAttribute(): ?string
+    {
+        return $this->attributes['village'] ?? null;
+    }
 }

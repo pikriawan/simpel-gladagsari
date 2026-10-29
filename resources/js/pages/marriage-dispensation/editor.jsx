@@ -48,7 +48,7 @@ const RELIGIONS = [
 
 const EMPTY_FORM = {
     letterNumber: '',
-    villageName: '',
+    village: '',
     referenceLetterNumber: '',
     letterDate: '',
     applicantName: '',
@@ -63,19 +63,32 @@ const EMPTY_FORM = {
     partnerAddress: '',
 };
 
-import { getAllSubvillagesList } from '@/lib/village-data';
+import {
+    getAllSubvillagesList,
+    getAllVillagesList,
+    getVillageBySubvillage,
+} from '@/lib/village-data';
 import { getStoredTemplateSettings } from '@/lib/template-settings';
 
 function recordToForm(record) {
     if (!record) return { ...EMPTY_FORM };
+    let sub = record.subvillage ?? '';
+    let vil = record.village ?? record.village_name ?? '';
+    if (sub.includes(',') && !vil) {
+        const parts = sub.split(',').map((p) => p.trim());
+        sub = parts[0] || '';
+        vil = parts[1] || '';
+    } else if (sub.includes(',')) {
+        sub = sub.split(',')[0].trim();
+    }
     return {
         letterNumber:           record.letter_number           ?? '',
-        villageName:            record.village_name            ?? '',
+        village:                vil,
         referenceLetterNumber:  record.reference_letter_number ?? '',
         letterDate:             record.letter_date             ?? '',
         applicantName:          record.applicant_name          ?? '',
         applicantBirthPlaceDate:record.applicant_birth_place_date ?? '',
-        subvillage:             record.subvillage              ?? '',
+        subvillage:             sub,
         rt:                     record.rt                      ?? '',
         rw:                     record.rw                      ?? '',
         marriageDate:           record.marriage_date           ?? '',
@@ -88,11 +101,21 @@ function recordToForm(record) {
 
 export default function Editor({ record }) {
     const [form, setForm] = useState(() => recordToForm(record));
-    const [subVillages, setSubVillages] = useState(() => getAllSubvillagesList());
+    const [villages, setVillages] = useState(() => getAllVillagesList());
+    const [subVillages, setSubVillages] = useState(() =>
+        getAllSubvillagesList(form.village),
+    );
     const [template, setTemplate] = useState(() => getStoredTemplateSettings());
 
     useEffect(() => {
-        const updateList = () => setSubVillages(getAllSubvillagesList());
+        setSubVillages(getAllSubvillagesList(form.village));
+    }, [form.village]);
+
+    useEffect(() => {
+        const updateList = () => {
+            setVillages(getAllVillagesList());
+            setSubVillages(getAllSubvillagesList(form.village));
+        };
         const updateTemplate = () => setTemplate(getStoredTemplateSettings());
         window.addEventListener('village_data_updated', updateList);
         window.addEventListener('template_settings_updated', updateTemplate);
@@ -100,7 +123,7 @@ export default function Editor({ record }) {
             window.removeEventListener('village_data_updated', updateList);
             window.removeEventListener('template_settings_updated', updateTemplate);
         };
-    }, []);
+    }, [form.village]);
 
     // Reset form setiap kali record berubah (navigasi dari riwayat)
     useEffect(() => {
@@ -163,11 +186,42 @@ export default function Editor({ record }) {
                                         <FieldLabel>
                                             Nama desa pengantar
                                         </FieldLabel>
-                                        <Input
-                                            placeholder="Contoh: Kaligentong"
-                                            name="villageName"
-                                            {...bind('villageName')}
-                                        />
+                                        <Combobox
+                                            items={villages}
+                                            value={form.village}
+                                            onValueChange={(value) =>
+                                                setForm((current) => ({
+                                                    ...current,
+                                                    village: value ?? '',
+                                                }))
+                                            }
+                                        >
+                                            <ComboboxInput
+                                                name="village"
+                                                placeholder="Pilih atau cari desa..."
+                                                onChange={(e) =>
+                                                    setForm((current) => ({
+                                                        ...current,
+                                                        village: e.target.value,
+                                                    }))
+                                                }
+                                            />
+                                            <ComboboxContent>
+                                                <ComboboxEmpty>
+                                                    Desa tidak ditemukan.
+                                                </ComboboxEmpty>
+                                                <ComboboxList>
+                                                    {(item) => (
+                                                        <ComboboxItem
+                                                            key={item}
+                                                            value={item}
+                                                        >
+                                                            {item}
+                                                        </ComboboxItem>
+                                                    )}
+                                                </ComboboxList>
+                                            </ComboboxContent>
+                                        </Combobox>
                                     </Field>
                                     <Field>
                                         <FieldLabel>
@@ -218,20 +272,35 @@ export default function Editor({ record }) {
                                         <Combobox
                                             items={subVillages}
                                             value={form.subvillage}
-                                            onValueChange={(value) =>
-                                                setForm((current) => ({
-                                                    ...current,
-                                                    subvillage: value ?? '',
-                                                }))
-                                            }
+                                            onValueChange={(value) => {
+                                                setForm((current) => {
+                                                    const next = {
+                                                        ...current,
+                                                        subvillage: value ?? '',
+                                                    };
+                                                    if (!current.village && value) {
+                                                        const detected = getVillageBySubvillage(value);
+                                                        if (detected) {
+                                                            next.village = detected;
+                                                        }
+                                                    }
+                                                    return next;
+                                                });
+                                            }}
                                         >
                                             <ComboboxInput
                                                 name="subvillage"
-                                                placeholder="Cari dukuh..."
+                                                placeholder="Pilih atau cari dukuh..."
+                                                onChange={(e) =>
+                                                    setForm((current) => ({
+                                                        ...current,
+                                                        subvillage: e.target.value,
+                                                    }))
+                                                }
                                             />
                                             <ComboboxContent>
                                                 <ComboboxEmpty>
-                                                    No items found.
+                                                    Dukuh tidak ditemukan.
                                                 </ComboboxEmpty>
                                                 <ComboboxList>
                                                     {(item) => (
