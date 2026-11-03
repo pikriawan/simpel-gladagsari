@@ -30,7 +30,7 @@ import {
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { dashboard, userManager } from '@/routes';
+import { dashboard, patenRegistration, userManager } from '@/routes';
 import {
     editor,
     history,
@@ -75,6 +75,7 @@ export function AppSidebar() {
     const { isCurrentUrl } = useCurrentUrl();
 
     const isAdmin = auth.user.role === 'administrator';
+    const isService = auth.user.role === 'service';
 
     return (
         <Sidebar collapsible="icon" variant="inset">
@@ -170,6 +171,21 @@ export function AppSidebar() {
                                     </CollapsibleContent>
                                 </SidebarMenuItem>
                             </Collapsible>
+                        )}
+
+                        {isService && (
+                            <SidebarMenuItem>
+                                <SidebarMenuButton
+                                    asChild
+                                    isActive={isCurrentUrl(patenRegistration())}
+                                    tooltip={{ children: 'Registrasi PATEN' }}
+                                >
+                                    <Link href={patenRegistration()} prefetch>
+                                        <FileText />
+                                        <span>Registrasi PATEN</span>
+                                    </Link>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
                         )}
                     </SidebarMenu>
                 </SidebarGroup>

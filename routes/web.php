@@ -31,6 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('marriage-dispensation/template-settings', [TemplateSettingController::class, 'reset'])->name('marriage-dispensation.template-settings.reset');
         Route::post('marriage-dispensation', [MarriageDispensationController::class, 'store'])->name('marriage-dispensation.store');
         Route::delete('marriage-dispensation/{marriageDispensation}', [MarriageDispensationController::class, 'destroy'])->name('marriage-dispensation.destroy');
+        Route::inertia('paten-registration', 'paten-registration')->name('paten-registration');
     });
 });
 
