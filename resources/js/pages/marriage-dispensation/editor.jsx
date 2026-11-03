@@ -435,8 +435,12 @@ export default function Editor({ record, templateSettings = {} }) {
                         </FieldGroup>
                     </form>
 
-                    <div className="min-h-0 overflow-hidden">
-                        <LetterPreview form={form} template={template} />
+                    <div className="min-h-0">
+                        <LetterPreview
+                            form={form}
+                            template={template}
+                            hugContent
+                        />
                     </div>
                 </div>
             </div>

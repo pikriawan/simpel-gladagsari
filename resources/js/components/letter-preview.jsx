@@ -21,9 +21,15 @@ const DEFAULT_TEMPLATE = {
 
 const display = (value) => (value?.trim() ? value : '..........');
 
-export default function LetterPreview({ form = {}, template = {} }) {
+export default function LetterPreview({
+    form = {},
+    template = {},
+    hugContent = false,
+}) {
     const containerRef = useRef(null);
+    const articleRef = useRef(null);
     const [scale, setScale] = useState(1);
+    const [previewHeight, setPreviewHeight] = useState(0);
 
     useLayoutEffect(() => {
         const el = containerRef.current;
@@ -46,6 +52,23 @@ export default function LetterPreview({ form = {}, template = {} }) {
             window.removeEventListener('resize', updateScale);
         };
     }, []);
+
+    useLayoutEffect(() => {
+        if (!hugContent) return;
+
+        const el = articleRef.current;
+        if (!el) return;
+
+        const updateHeight = () => {
+            setPreviewHeight(el.getBoundingClientRect().height);
+        };
+
+        updateHeight();
+        const ro = new ResizeObserver(updateHeight);
+        ro.observe(el);
+
+        return () => ro.disconnect();
+    }, [hugContent, scale]);
 
     const config = Object.fromEntries(
         Object.entries(DEFAULT_TEMPLATE).map(([key, value]) => [
@@ -74,8 +97,17 @@ export default function LetterPreview({ form = {}, template = {} }) {
     const partnerAddress = form.partnerAddress || '..........';
 
     return (
-        <div ref={containerRef} className="preview-viewport">
+        <div
+            ref={containerRef}
+            className={`preview-viewport${hugContent ? ' preview-viewport--hug' : ''}`}
+            style={
+                hugContent && previewHeight > 0
+                    ? { height: `${previewHeight}px` }
+                    : undefined
+            }
+        >
             <article
+                ref={articleRef}
                 id="printable-letter"
                 className="preview preview--document"
                 aria-label="Pratinjau surat dispensasi nikah"
