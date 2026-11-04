@@ -13,7 +13,7 @@ export default function PatenRegistration() {
             <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
             <Head title="Registrasi PATEN" />
             <div className="p-4">
-                <div className="paten-registration-spreadsheet h-[calc(100svh-7rem)] w-full overflow-auto">
+                <div className="paten-registration-spreadsheet h-[calc(100svh-7rem)] w-full overflow-hidden">
                     <Spreadsheet ref={spreadsheet} toolbar>
                         <Worksheet minDimensions={[50, 50]} />
                     </Spreadsheet>

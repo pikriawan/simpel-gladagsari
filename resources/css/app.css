@@ -152,11 +152,69 @@
   box-shadow: inset 0 0 0 1px var(--border), 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
-.paten-registration-spreadsheet .jss_toolbar {
+.paten-registration-spreadsheet {
+  display: flex;
+  flex-direction: column;
+}
+
+.paten-registration-spreadsheet .jss_spreadsheet {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.paten-registration-spreadsheet .jtabs-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.paten-registration-spreadsheet .jss_container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.paten-registration-spreadsheet .jss_content {
+  flex: 1;
+  overflow: auto;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+}
+
+.paten-registration-spreadsheet .jss_worksheet > thead > tr > td {
   position: sticky;
   top: 0;
+  z-index: 20;
+  background-color: #f3f3f3;
+  border-bottom: 1px solid #ccc;
+}
+
+.paten-registration-spreadsheet .jss_worksheet > thead > tr > td:first-child {
+  position: sticky;
+  top: 0;
+  left: 0;
   z-index: 30;
-  background: #f3f3f3;
+  background-color: #f3f3f3;
+  border-right: 1px solid #ccc;
+  border-bottom: 1px solid #ccc;
+}
+
+.paten-registration-spreadsheet .jss_worksheet > tbody > tr > td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: #f3f3f3;
+  border-right: 1px solid #ccc;
+}
+
+.paten-registration-spreadsheet .jss_worksheet > thead > tr > td.selected,
+.paten-registration-spreadsheet .jss_worksheet > tbody > tr.selected > td:first-child {
+  background-color: #dcdcdc;
 }
 
 .preview-viewport--hug {
