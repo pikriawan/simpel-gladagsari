@@ -15,9 +15,9 @@ export function AppSidebarHeader({
                 <SidebarTrigger className="-ml-1" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
-            {actions && (
-                <div className="flex items-center gap-2">{actions}</div>
-            )}
+            <div id="header-actions" className="flex items-center gap-2">
+                {actions}
+            </div>
         </header>
     );
 }

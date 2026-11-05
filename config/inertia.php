@@ -67,4 +67,21 @@ return [
 
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Inertia DevTools
+    |--------------------------------------------------------------------------
+    |
+    | Inertia DevTools secara default aktif di environment local, namun bisa
+    | menyebabkan timeout saat banyak file di node_modules. Nonaktifkan jika
+    | tidak diperlukan untuk menghindari Maximum execution time exceeded.
+    |
+    */
+
+    'devtools' => [
+
+        'enabled' => false,
+
+    ],
+
 ];
