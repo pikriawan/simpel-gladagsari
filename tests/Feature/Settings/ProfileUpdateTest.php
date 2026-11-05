@@ -67,6 +67,23 @@ test('user can delete their account', function () {
     expect($user->fresh())->toBeNull();
 });
 
+test('administrator cannot delete their account', function () {
+    $admin = User::factory()->create([
+        'role' => 'administrator',
+    ]);
+
+    $response = $this
+        ->actingAs($admin)
+        ->delete(route('profile.destroy'), [
+            'password' => 'password',
+        ]);
+
+    $response->assertForbidden();
+
+    $this->assertAuthenticatedAs($admin);
+    expect($admin->fresh())->not->toBeNull();
+});
+
 test('correct password must be provided to delete account', function () {
     $user = User::factory()->create();
 
