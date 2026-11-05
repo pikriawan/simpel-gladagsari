@@ -50,6 +50,8 @@ class ProfileController extends Controller
     {
         $user = $request->user();
 
+        abort_if($user->role === 'administrator', 403, 'Administrator tidak dapat menghapus akun.');
+
         Auth::logout();
 
         $user->delete();
