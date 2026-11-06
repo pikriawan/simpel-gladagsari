@@ -22,5 +22,14 @@ class UserSeeder extends Seeder
             'role' => 'administrator',
             'status' => 'active',
         ]);
+
+        DB::table('users')->insert([
+            'name' => 'Service',
+            'email' => 'service@gladagsari.go.id',
+            'password' => Hash::make('password'),
+            'email_verified_at' => now(),
+            'role' => 'service',
+            'status' => 'active',
+        ]);
     }
 }

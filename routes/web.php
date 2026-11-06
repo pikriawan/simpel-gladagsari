@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\MarriageDispensationController;
-use App\Http\Controllers\PatenRegistrationController;
 use App\Http\Controllers\TemplateSettingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -32,11 +31,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('marriage-dispensation/template-settings', [TemplateSettingController::class, 'reset'])->name('marriage-dispensation.template-settings.reset');
         Route::post('marriage-dispensation', [MarriageDispensationController::class, 'store'])->name('marriage-dispensation.store');
         Route::delete('marriage-dispensation/{marriageDispensation}', [MarriageDispensationController::class, 'destroy'])->name('marriage-dispensation.destroy');
-        Route::get('paten-registration', [PatenRegistrationController::class, 'index'])->name('paten-registration');
-        Route::post('paten-registration', [PatenRegistrationController::class, 'store'])->name('paten-registration.store');
-        Route::get('paten-registration/download', [PatenRegistrationController::class, 'download'])->name('paten-registration.download');
-        Route::post('paten-registration/export', [PatenRegistrationController::class, 'export'])->name('paten-registration.export');
-        Route::post('paten-registration/import', [PatenRegistrationController::class, 'import'])->name('paten-registration.import');
+        Route::inertia('paten-registration', 'paten-registration')->name('paten-registration');
     });
 });
 
