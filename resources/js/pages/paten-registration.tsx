@@ -1,11 +1,7 @@
-import {
-    Head,
-    setLayoutProps,
-    resetLayoutProps,
-} from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { useCallback, useEffect, useRef } from 'react';
 import { patenRegistration } from '@/routes';
-import { Button } from '@/components/ui/button';
+import { store as storePatenRegistration } from '@/routes/paten-registration';
 
 import { Univer } from '@univerjs/core';
 import { FUniver } from '@univerjs/core/facade';
@@ -56,33 +52,41 @@ import '@univerjs/sheets-ui/lib/index.css';
 import '@univerjs/sheets-formula-ui/lib/index.css';
 import '@univerjs/sheets-numfmt-ui/lib/index.css';
 
-export default function PatenRegistration() {
+export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const univerAPIRef = useRef<any>(null);
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const handleSave = useCallback(() => {
-        const univerAPI = univerAPIRef.current;
-        if (!univerAPI) return;
-        const fWorkbook = univerAPI.getActiveWorkbook();
-        const snapshot = fWorkbook.save();
-        console.log(snapshot);
-        localStorage.setItem(
-            'paten-registration-snapshot',
-            JSON.stringify(snapshot),
-        );
+    const autoSave = useCallback(() => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+            const univerAPI = univerAPIRef.current;
+            if (!univerAPI) return;
+            try {
+                const fWorkbook = univerAPI.getActiveWorkbook();
+                if (!fWorkbook) return;
+                const snapshot = fWorkbook.save();
+                const token = document
+                    .querySelector('meta[name="csrf-token"]')
+                    ?.getAttribute('content');
+                fetch(storePatenRegistration().url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token ?? '',
+                        Accept: 'application/json',
+                    },
+                    body: JSON.stringify({ snapshot }),
+                }).catch((error) => {
+                    console.error('Gagal menyimpan snapshot ke disk', error);
+                });
+            } catch (error) {
+                console.error('Gagal menyimpan snapshot otomatis', error);
+            }
+        }, 1000);
     }, []);
-
-    useEffect(() => {
-        setLayoutProps({
-            actions: (
-                <Button type="button" onClick={handleSave}>
-                    Simpan
-                </Button>
-            ),
-        });
-
-        return () => resetLayoutProps();
-    }, [handleSave]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -122,19 +126,17 @@ export default function PatenRegistration() {
         const univerAPI = FUniver.newAPI(univer);
         univerAPIRef.current = univerAPI;
 
-        let loadedFromStorage = false;
+        let loadedFromSnapshot = false;
         try {
-            const raw = localStorage.getItem('paten-registration-snapshot');
-            if (raw) {
-                const snapshot = JSON.parse(raw);
+            if (snapshot) {
                 univerAPI.createWorkbook(snapshot);
-                loadedFromStorage = true;
+                loadedFromSnapshot = true;
             }
         } catch (error) {
-            console.error('Gagal memuat snapshot dari localStorage', error);
+            console.error('Gagal memuat snapshot dari server', error);
         }
 
-        if (!loadedFromStorage) {
+        if (!loadedFromSnapshot) {
             univerAPI.createWorkbook({
                 id: 'paten-registration-workbook',
                 name: 'Registrasi PATEN',
@@ -150,7 +152,18 @@ export default function PatenRegistration() {
             });
         }
 
+        const disposable = univerAPI.addEvent(
+            univerAPI.Event.CommandExecuted,
+            () => {
+                autoSave();
+            },
+        );
+
         return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+            disposable?.dispose();
             univerAPIRef.current = null;
             univer.dispose();
         };
