@@ -1,6 +1,11 @@
-import { Head } from '@inertiajs/react';
-import { useEffect, useRef } from 'react';
+import {
+    Head,
+    setLayoutProps,
+    resetLayoutProps,
+} from '@inertiajs/react';
+import { useCallback, useEffect, useRef } from 'react';
 import { patenRegistration } from '@/routes';
+import { Button } from '@/components/ui/button';
 
 import { Univer } from '@univerjs/core';
 import { FUniver } from '@univerjs/core/facade';
@@ -53,6 +58,31 @@ import '@univerjs/sheets-numfmt-ui/lib/index.css';
 
 export default function PatenRegistration() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const univerAPIRef = useRef<any>(null);
+
+    const handleSave = useCallback(() => {
+        const univerAPI = univerAPIRef.current;
+        if (!univerAPI) return;
+        const fWorkbook = univerAPI.getActiveWorkbook();
+        const snapshot = fWorkbook.save();
+        console.log(snapshot);
+        localStorage.setItem(
+            'paten-registration-snapshot',
+            JSON.stringify(snapshot),
+        );
+    }, []);
+
+    useEffect(() => {
+        setLayoutProps({
+            actions: (
+                <Button type="button" onClick={handleSave}>
+                    Simpan
+                </Button>
+            ),
+        });
+
+        return () => resetLayoutProps();
+    }, [handleSave]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -90,22 +120,38 @@ export default function PatenRegistration() {
         ]);
 
         const univerAPI = FUniver.newAPI(univer);
+        univerAPIRef.current = univerAPI;
 
-        univerAPI.createWorkbook({
-            id: 'paten-registration-workbook',
-            name: 'Registrasi PATEN',
-            sheetOrder: ['sheet-1'],
-            sheets: {
-                'sheet-1': {
-                    id: 'sheet-1',
-                    name: 'Sheet1',
-                    rowCount: 100,
-                    columnCount: 20,
+        let loadedFromStorage = false;
+        try {
+            const raw = localStorage.getItem('paten-registration-snapshot');
+            if (raw) {
+                const snapshot = JSON.parse(raw);
+                univerAPI.createWorkbook(snapshot);
+                loadedFromStorage = true;
+            }
+        } catch (error) {
+            console.error('Gagal memuat snapshot dari localStorage', error);
+        }
+
+        if (!loadedFromStorage) {
+            univerAPI.createWorkbook({
+                id: 'paten-registration-workbook',
+                name: 'Registrasi PATEN',
+                sheetOrder: ['sheet-1'],
+                sheets: {
+                    'sheet-1': {
+                        id: 'sheet-1',
+                        name: 'Sheet1',
+                        rowCount: 100,
+                        columnCount: 20,
+                    },
                 },
-            },
-        });
+            });
+        }
 
         return () => {
+            univerAPIRef.current = null;
             univer.dispose();
         };
     }, []);
