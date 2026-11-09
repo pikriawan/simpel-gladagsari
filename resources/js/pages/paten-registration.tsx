@@ -1,7 +1,8 @@
-import { Head, router } from '@inertiajs/react';
-import { useCallback, useEffect, useRef } from 'react';
+import { Head, router, setLayoutProps, resetLayoutProps } from '@inertiajs/react';
+import { useCallback, useEffect, useRef, type ChangeEvent } from 'react';
 import { patenRegistration } from '@/routes';
 import { store as storePatenRegistration } from '@/routes/paten-registration';
+import { Button } from '@/components/ui/button';
 
 import { Univer } from '@univerjs/core';
 import { FUniver } from '@univerjs/core/facade';
@@ -56,6 +57,7 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const univerAPIRef = useRef<any>(null);
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const autoSave = useCallback(() => {
         if (saveTimeoutRef.current) {
@@ -86,6 +88,90 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
                 console.error('Gagal menyimpan snapshot otomatis', error);
             }
         }, 1000);
+    }, []);
+
+    const handleExportJson = useCallback(() => {
+        const univerAPI = univerAPIRef.current;
+        if (!univerAPI) return;
+        try {
+            const snapshot = univerAPI.getActiveWorkbook()?.save();
+            if (!snapshot) return;
+            const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
+                type: 'application/json',
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'registrasi-paten.json';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Gagal mengekspor snapshot JSON', error);
+        }
+    }, []);
+
+    const handleImportClick = useCallback(() => {
+        fileInputRef.current?.click();
+    }, []);
+
+    const handleImportFile = useCallback(
+        (event: ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    const parsed = JSON.parse(String(reader.result));
+                    if (!parsed || typeof parsed !== 'object' || !parsed.sheets) {
+                        throw new Error('Format snapshot tidak valid');
+                    }
+                    const univerAPI = univerAPIRef.current;
+                    if (!univerAPI) return;
+                    const current = univerAPI.getActiveWorkbook();
+                    const currentId = current?.getId?.();
+                    if (currentId) {
+                        univerAPI.disposeUnit(currentId);
+                    }
+                    univerAPI.createWorkbook(parsed);
+                    autoSave();
+                } catch (error) {
+                    console.error('Gagal mengimpor snapshot JSON', error);
+                } finally {
+                    if (event.target) {
+                        event.target.value = '';
+                    }
+                }
+            };
+            reader.readAsText(file);
+        },
+        [autoSave],
+    );
+
+    useEffect(() => {
+        setLayoutProps({
+            actions: (
+                <>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleImportClick}
+                    >
+                        Impor (.json)
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleExportJson}
+                    >
+                        Ekspor (.json)
+                    </Button>
+                </>
+            ),
+        });
+
+        return () => resetLayoutProps();
     }, []);
 
     useEffect(() => {
@@ -172,6 +258,14 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
     return (
         <>
             <Head title="Registrasi PATEN" />
+
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json"
+                className="hidden"
+                onChange={handleImportFile}
+            />
 
             <div
                 ref={containerRef}

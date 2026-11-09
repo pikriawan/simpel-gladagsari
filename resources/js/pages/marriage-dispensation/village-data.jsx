@@ -4,6 +4,7 @@ import { Plus, RotateCcw, SquarePen, Trash2 } from 'lucide-react';
 import { editor, villageData } from '@/routes/marriage-dispensation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
     DialogContent,
@@ -71,7 +72,8 @@ export default function DataDesaDukuh() {
         const name = newDesaName.trim();
         if (!name) return;
 
-        const newId = name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now();
+        const newId =
+            name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now();
         const updated = [
             ...villages,
             {
@@ -124,7 +126,8 @@ export default function DataDesaDukuh() {
         const name = newDukuhName.trim();
         if (!name || !selectedDesa) return;
 
-        const newId = name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now();
+        const newId =
+            name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now();
         const updatedSubvillages = [
             ...(selectedDesa.subvillages || []),
             {
@@ -198,168 +201,179 @@ export default function DataDesaDukuh() {
         <>
             <Head title="Data Desa dan Dukuh" />
 
-            <div className="flex-1 overflow-auto p-6">
-                <h1 className="mb-6 text-xl font-bold tracking-tight text-foreground">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+                <h1 className="text-lg font-semibold text-foreground">
                     Data Desa dan Dukuh
                 </h1>
 
-                <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+                <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
                     {/* ── KOLOM DESA ───────────────────────────────────────── */}
-                    <div className="flex flex-col">
-                        <label className="mb-2 text-sm font-semibold text-foreground">
-                            Desa
-                        </label>
-                        <div className="mb-4 flex gap-2">
-                            <Input
-                                placeholder="Masukkan nama desa"
-                                value={newDesaName}
-                                onChange={(e) => setNewDesaName(e.target.value)}
-                                onKeyDown={(e) =>
-                                    e.key === 'Enter' && handleAddDesa()
-                                }
-                                className="h-9 bg-background text-sm"
-                            />
-                            <Button
-                                type="button"
-                                onClick={handleAddDesa}
-                                className="h-9 shrink-0 bg-blue-600 px-3.5 text-xs font-medium text-white hover:bg-blue-700"
-                            >
-                                <Plus className="mr-1 size-3.5" />
-                                Tambah desa
-                            </Button>
-                        </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Desa</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-4">
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Masukkan nama desa"
+                                    value={newDesaName}
+                                    onChange={(e) =>
+                                        setNewDesaName(e.target.value)
+                                    }
+                                    onKeyDown={(e) =>
+                                        e.key === 'Enter' && handleAddDesa()
+                                    }
+                                    className="h-9 bg-background text-sm"
+                                />
+                                <Button
+                                    type="button"
+                                    onClick={handleAddDesa}
+                                    className="h-9 shrink-0 px-3.5 text-xs font-medium"
+                                >
+                                    <Plus className="mr-1 size-3.5" />
+                                    Tambah desa
+                                </Button>
+                            </div>
 
-                        <div className="flex flex-col gap-2">
-                            {villages.map((desa) => {
-                                const isSelected = selectedDesa?.id === desa.id;
-                                return (
-                                    <div
-                                        key={desa.id}
-                                        onClick={() =>
-                                            setSelectedDesaId(desa.id)
-                                        }
-                                        className={cn(
-                                            'flex cursor-pointer items-center justify-between rounded-lg border px-4 py-2.5 text-sm transition-all select-none',
-                                            isSelected
-                                                ? 'border-blue-400 bg-blue-50/50 text-blue-600 font-medium shadow-xs dark:border-blue-500 dark:bg-blue-950/30 dark:text-blue-400'
-                                                : 'border-border bg-background text-foreground hover:bg-muted/50',
-                                        )}
-                                    >
-                                        <span className="truncate">
-                                            {desa.name}
-                                        </span>
+                            <div className="flex flex-col gap-2">
+                                {villages.map((desa) => {
+                                    const isSelected =
+                                        selectedDesa?.id === desa.id;
+                                    return (
                                         <div
-                                            className="flex shrink-0 items-center gap-1"
-                                            onClick={(e) => e.stopPropagation()}
+                                            key={desa.id}
+                                            onClick={() =>
+                                                setSelectedDesaId(desa.id)
+                                            }
+                                            className={cn(
+                                                'flex cursor-pointer items-center justify-between rounded-lg border px-4 py-2.5 text-sm transition-all select-none',
+                                                isSelected
+                                                    ? 'border-primary bg-primary/5 font-medium text-primary shadow-xs'
+                                                    : 'border-border bg-background text-foreground hover:bg-muted/50',
+                                            )}
                                         >
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                onClick={() =>
-                                                    handleOpenEditDesa(desa)
+                                            <span className="truncate">
+                                                {desa.name}
+                                            </span>
+                                            <div
+                                                className="flex shrink-0 items-center gap-1"
+                                                onClick={(e) =>
+                                                    e.stopPropagation()
                                                 }
-                                                title="Edit desa"
                                             >
-                                                <SquarePen className="size-4" />
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
-                                                onClick={() =>
-                                                    setDeletingDesa(desa)
-                                                }
-                                                title="Hapus desa"
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                    onClick={() =>
+                                                        handleOpenEditDesa(desa)
+                                                    }
+                                                    title="Edit desa"
+                                                >
+                                                    <SquarePen className="size-4" />
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                    onClick={() =>
+                                                        setDeletingDesa(desa)
+                                                    }
+                                                    title="Hapus desa"
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                </Button>
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
 
                     {/* ── KOLOM DUKUH ──────────────────────────────────────── */}
-                    <div className="flex flex-col">
-                        <label className="mb-2 text-sm font-semibold text-foreground">
-                            Dukuh
-                        </label>
-                        <div className="mb-4 flex gap-2">
-                            <Input
-                                placeholder="Masukkan nama dukuh"
-                                value={newDukuhName}
-                                onChange={(e) =>
-                                    setNewDukuhName(e.target.value)
-                                }
-                                onKeyDown={(e) =>
-                                    e.key === 'Enter' && handleAddDukuh()
-                                }
-                                disabled={!selectedDesa}
-                                className="h-9 bg-background text-sm"
-                            />
-                            <Button
-                                type="button"
-                                onClick={handleAddDukuh}
-                                disabled={!selectedDesa}
-                                className="h-9 shrink-0 bg-blue-600 px-3.5 text-xs font-medium text-white hover:bg-blue-700"
-                            >
-                                <Plus className="mr-1 size-3.5" />
-                                Tambah dukuh
-                            </Button>
-                        </div>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Dukuh</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-4">
+                            <div className="flex gap-2">
+                                <Input
+                                    placeholder="Masukkan nama dukuh"
+                                    value={newDukuhName}
+                                    onChange={(e) =>
+                                        setNewDukuhName(e.target.value)
+                                    }
+                                    onKeyDown={(e) =>
+                                        e.key === 'Enter' && handleAddDukuh()
+                                    }
+                                    disabled={!selectedDesa}
+                                    className="h-9 bg-background text-sm"
+                                />
+                                <Button
+                                    type="button"
+                                    onClick={handleAddDukuh}
+                                    disabled={!selectedDesa}
+                                    className="h-9 shrink-0 px-3.5 text-xs font-medium"
+                                >
+                                    <Plus className="mr-1 size-3.5" />
+                                    Tambah dukuh
+                                </Button>
+                            </div>
 
-                        <div className="flex flex-col gap-2">
-                            {selectedDesa &&
-                            (selectedDesa.subvillages || []).length > 0 ? (
-                                selectedDesa.subvillages.map((dukuh) => (
-                                    <div
-                                        key={dukuh.id}
-                                        className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-muted/20"
-                                    >
-                                        <span className="truncate">
-                                            {dukuh.name}
-                                        </span>
-                                        <div className="flex shrink-0 items-center gap-1">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                onClick={() =>
-                                                    handleOpenEditDukuh(dukuh)
-                                                }
-                                                title="Edit dukuh"
-                                            >
-                                                <SquarePen className="size-4" />
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
-                                                onClick={() =>
-                                                    setDeletingDukuh(dukuh)
-                                                }
-                                                title="Hapus dukuh"
-                                            >
-                                                <Trash2 className="size-4" />
-                                            </Button>
+                            <div className="flex flex-col gap-2">
+                                {selectedDesa &&
+                                (selectedDesa.subvillages || []).length > 0 ? (
+                                    selectedDesa.subvillages.map((dukuh) => (
+                                        <div
+                                            key={dukuh.id}
+                                            className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground transition-colors hover:bg-muted/20"
+                                        >
+                                            <span className="truncate">
+                                                {dukuh.name}
+                                            </span>
+                                            <div className="flex shrink-0 items-center gap-1">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                    onClick={() =>
+                                                        handleOpenEditDukuh(
+                                                            dukuh,
+                                                        )
+                                                    }
+                                                    title="Edit dukuh"
+                                                >
+                                                    <SquarePen className="size-4" />
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                                    onClick={() =>
+                                                        setDeletingDukuh(dukuh)
+                                                    }
+                                                    title="Hapus dukuh"
+                                                >
+                                                    <Trash2 className="size-4" />
+                                                </Button>
+                                            </div>
                                         </div>
+                                    ))
+                                ) : (
+                                    <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
+                                        {selectedDesa
+                                            ? `Belum ada data dukuh untuk Desa ${selectedDesa.name}.`
+                                            : 'Pilih desa terlebih dahulu.'}
                                     </div>
-                                ))
-                            ) : (
-                                <div className="rounded-lg border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
-                                    {selectedDesa
-                                        ? `Belum ada data dukuh untuk Desa ${selectedDesa.name}.`
-                                        : 'Pilih desa terlebih dahulu.'}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
 
@@ -392,10 +406,7 @@ export default function DataDesaDukuh() {
                         >
                             Batal
                         </Button>
-                        <Button
-                            onClick={handleSaveEditDesa}
-                            className="bg-blue-600 text-white hover:bg-blue-700"
-                        >
+                        <Button onClick={handleSaveEditDesa}>
                             Simpan Perubahan
                         </Button>
                     </DialogFooter>
@@ -462,10 +473,7 @@ export default function DataDesaDukuh() {
                         >
                             Batal
                         </Button>
-                        <Button
-                            onClick={handleSaveEditDukuh}
-                            className="bg-blue-600 text-white hover:bg-blue-700"
-                        >
+                        <Button onClick={handleSaveEditDukuh}>
                             Simpan Perubahan
                         </Button>
                     </DialogFooter>
@@ -524,10 +532,7 @@ export default function DataDesaDukuh() {
                         >
                             Batal
                         </Button>
-                        <Button
-                            onClick={handleConfirmReset}
-                            className="bg-blue-600 text-white hover:bg-blue-700"
-                        >
+                        <Button onClick={handleConfirmReset}>
                             Reset ke Default
                         </Button>
                     </DialogFooter>
