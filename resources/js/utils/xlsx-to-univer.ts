@@ -1,24 +1,22 @@
 /**
  * Konverter file XLSX → snapshot Univer
  *
- * Mendukung:
- * - Nilai sel (string, number, boolean, formula, date, rich text)
- * - Anti-corruption NIK/string: String angka tidak akan dipaksa diformat tanggal
- * - Format tanggal konsisten: Date ditampilkan sebagai M/D/YYYY persis seperti Excel
- * - Freeze panes (pembekuan baris/kolom) dari ws.views
- * - Merge cells lengkap dengan penggabungan border luar (top, bottom, left, right)
- * - Lebar kolom (columnData) & tinggi baris (rowData)
- * - Background fill (pattern solid, theme colors Office standar, argb hex)
- * - Font (family, size, bold, italic, underline, strikethrough, color)
- * - Alignment (horizontal: left/center/right/justify, vertical: top/middle/bottom, wrapText, textRotation)
- * - Border (top, right, bottom, left)
- * - Number format (pattern)
- *
- * Strategi efisiensi RAM:
- * - eachRow() streaming tanpa buffer berlebih
- * - ValueType.Merge slave cell skip (O(1))
- * - Style dedup via Map<JSON, id> — style identik di-cache satu kali
- * - Pembersihan memori & cache setelah konversi
+ * Sesuai urutan yang tepat:
+ * 1. LOAD MERGE TERLEBIH DAHULU:
+ *    - Ekstrak seluruh area sel yang digabung (merged cells) dari worksheet
+ *    - Buat peta sel merge (mergeCellMap & mergeMasterMap)
+ * 2. PROSES CELL & BORDER DENGAN MEMPERTIMBANGKAN MERGE:
+ *    - Sel kosong yang memiliki border (seperti sel data kosong di tabel) tetap disimpan bordernya
+ *    - Slave cells di dalam merge TIDAK dibuang; slave cells menyimpan informasi border batas merge
+ *      (sehingga fungsi render border Univer _setMergeBorderProps dapat menemukan border di setiap batas merge)
+ *    - Master cell dari merge mendapatkan border terluar yang lengkap (top, bottom, left, right)
+ *    - Teks angka (seperti NIK) dicegah agar tidak diformat sebagai tanggal
+ *    - Nilai tanggal diformat M/D/YYYY persis seperti di Excel
+ *    - Freeze panes diambil dari ws.views
+ * 3. EFISIENSI MEMORI:
+ *    - Loop kolom dibatasi hingga maxCol worksheet
+ *    - Sel di luar tabel yang benar-benar kosong dilewati
+ *    - Style di-deduplikasi dengan Map<string, string>
  */
 
 import ExcelJS from 'exceljs';
@@ -138,7 +136,7 @@ function parseRangeStr(s: string): any | null {
     return { startRow: start.r, startColumn: start.c, endRow: end.r, endColumn: end.c };
 }
 
-interface MergeRange {
+export interface MergeRange {
     startRow: number;
     startColumn: number;
     endRow: number;
@@ -146,7 +144,7 @@ interface MergeRange {
 }
 
 /**
- * Ekstrak merge cells dari worksheet ExcelJS.
+ * LANGKAH 1: Ekstrak seluruh merge cells dari worksheet ExcelJS
  */
 function extractMerges(ws: ExcelJS.Worksheet): MergeRange[] {
     const mergeData: MergeRange[] = [];
@@ -257,56 +255,6 @@ function convertBorder(border: Partial<ExcelJS.Borders> | undefined): Record<str
     return Object.keys(bd).length > 0 ? { bd } : {};
 }
 
-/**
- * Menggabungkan border luar untuk master cell dari merged range.
- * Di Excel, border merged cell sering kali dipecah (top dari sel atas, bottom dari sel bawah).
- * Univer membutuhkan border lengkap di master cell agar garis luar kotak merged utuh.
- */
-function getCombinedBorderForMerge(ws: ExcelJS.Worksheet, merge: MergeRange): Record<string, any> {
-    const topCell = ws.getCell(merge.startRow + 1, merge.startColumn + 1);
-    const bottomCell = ws.getCell(merge.endRow + 1, merge.startColumn + 1);
-    const leftCell = ws.getCell(merge.startRow + 1, merge.startColumn + 1);
-    const rightCell = ws.getCell(merge.startRow + 1, merge.endColumn + 1);
-
-    const bd: Record<string, any> = {};
-    const t = convertOneBorder(topCell.border?.top);
-    const b = convertOneBorder(bottomCell.border?.bottom || topCell.border?.bottom);
-    const l = convertOneBorder(leftCell.border?.left);
-    const r = convertOneBorder(rightCell.border?.right || topCell.border?.right);
-
-    if (t) bd.t = t;
-    if (b) bd.b = b;
-    if (l) bd.l = l;
-    if (r) bd.r = r;
-
-    return Object.keys(bd).length > 0 ? { bd } : {};
-}
-
-function buildUniverStyle(
-    cell: ExcelJS.Cell,
-    isStringCell: boolean,
-    combinedBorder?: Record<string, any> | null,
-): Record<string, any> {
-    const borderObj = combinedBorder || convertBorder(cell.border);
-
-    const style: Record<string, any> = {
-        ...convertFont(cell.font),
-        ...convertFill(cell.fill),
-        ...convertAlignment(cell.alignment),
-        ...borderObj,
-    };
-
-    // PENTING: Jangan tempelkan format tanggal/angka jika sel adalah STRING atau teks!
-    // Di Excel, teks angka (seperti NIK 330902...) tidak pernah diformat tanggal.
-    // Jika format tanggal seperti 'mm-dd-yy' dipasang, Univer akan memparsing
-    // string angka tersebut dan mengubahnya menjadi tanggal (12-22-05) atau '######'!
-    if (cell.numFmt && cell.numFmt !== 'General' && !isStringCell) {
-        style.n = { pattern: cell.numFmt };
-    }
-
-    return style;
-}
-
 // ─── Main converter ───────────────────────────────────────────────────────────
 
 export async function xlsxToUniverSnapshot(buffer: ArrayBuffer): Promise<any> {
@@ -339,14 +287,24 @@ export async function xlsxToUniverSnapshot(buffer: ArrayBuffer): Promise<any> {
         const rowData: Record<number, any> = {};
         const cellData: Record<number, Record<number, any>> = {};
 
-        // 1. Merge cells & master lookup
+        // ── 1. LOAD MERGE TERLEBIH DAHULU ─────────────────────────────────────
         const mergeData = extractMerges(ws);
+
+        // Peta sel merge: setiap koordinat (r, c) di dalam area merge
+        const mergeCellMap = new Map<string, MergeRange>();
+        // Peta master cell: koordinat sel kiri-atas merge (startRow, startColumn)
         const mergeMasterMap = new Map<string, MergeRange>();
+
         for (const m of mergeData) {
             mergeMasterMap.set(`${m.startRow}:${m.startColumn}`, m);
+            for (let r = m.startRow; r <= m.endRow; r++) {
+                for (let c = m.startColumn; c <= m.endColumn; c++) {
+                    mergeCellMap.set(`${r}:${c}`, m);
+                }
+            }
         }
 
-        // 2. Freeze panes (baca dari ws.views atau model.views)
+        // ── 2. Freeze panes (baca dari ws.views atau model.views) ─────────────
         const views = ws.views || (ws as any).model?.views || [];
         const freezeView = views.find(
             (v: any) =>
@@ -363,7 +321,9 @@ export async function xlsxToUniverSnapshot(buffer: ArrayBuffer): Promise<any> {
             startColumn: xSplit > 0 ? xSplit : -1,
         };
 
-        // 3. Lebar kolom
+        // ── 3. Lebar kolom ────────────────────────────────────────────────────
+        const maxCol = Math.max(ws.columnCount || 0, 20);
+
         if (ws.columns) {
             ws.columns.forEach((col, idx) => {
                 if (!col) return;
@@ -376,7 +336,7 @@ export async function xlsxToUniverSnapshot(buffer: ArrayBuffer): Promise<any> {
             });
         }
 
-        // 4. Baris & sel
+        // ── 4. Baris & sel (Memperhitungkan merge dan border lengkap) ──────────
         ws.eachRow({ includeEmpty: false }, (row, rowNum) => {
             const r = rowNum - 1; // 0-indexed
 
@@ -385,64 +345,134 @@ export async function xlsxToUniverSnapshot(buffer: ArrayBuffer): Promise<any> {
             if ((row as any).hidden) rEntry.hd = 1;
             if (Object.keys(rEntry).length > 0) rowData[r] = rEntry;
 
-            row.eachCell({ includeEmpty: false }, (cell, colNum) => {
-                // Abaikan slave cells pada merge (hanya master cell yang menyimpan nilai)
-                if (cell.type === ExcelJS.ValueType.Merge) return;
-
+            // Loop seluruh kolom hingga maxCol untuk memastikan sel kosong berborder tidak hilang
+            for (let colNum = 1; colNum <= maxCol; colNum++) {
+                const cell = row.getCell(colNum);
                 const c = colNum - 1; // 0-indexed
-                const cd: any = {};
 
-                const isStringCell = cell.type === ExcelJS.ValueType.String;
+                const mergeInfo = mergeCellMap.get(`${r}:${c}`);
+                const isMaster = mergeInfo ? (mergeInfo.startRow === r && mergeInfo.startColumn === c) : false;
+                const isSlave = mergeInfo ? !isMaster : false;
 
-                // ── Nilai sel ────────────────────────────────────────────────
-                if (cell.type === ExcelJS.ValueType.Formula) {
-                    const fv = cell.value as ExcelJS.CellFormulaValue;
-                    if (fv.formula) cd.f = fv.formula;
-                    if (fv.result != null) {
-                        if (fv.result instanceof Date) {
-                            const d = fv.result;
-                            cd.v = `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`;
-                            cd.t = 1;
-                        } else {
-                            cd.v = fv.result;
-                            if (typeof cd.v === 'number') cd.t = 2;
-                            else if (typeof cd.v === 'string') cd.t = 1;
-                            else if (typeof cd.v === 'boolean') cd.t = 3;
-                        }
-                    }
-                } else if (cell.type === ExcelJS.ValueType.Date) {
-                    // Gunakan UTC date parts agar bebas timezone offset (sesuai serial Excel)
-                    const d = cell.value as Date;
-                    const m = d.getUTCMonth() + 1;
-                    const day = d.getUTCDate();
-                    const y = d.getUTCFullYear();
-                    cd.v = `${m}/${day}/${y}`;
-                    cd.t = 1;
-                } else if (cell.type === ExcelJS.ValueType.RichText) {
-                    const rt = cell.value as { richText: Array<{ text: string }> };
-                    cd.v = (rt.richText || []).map((part) => part.text).join('');
-                    cd.t = 1;
-                } else if (cell.type !== ExcelJS.ValueType.Null && cell.value != null) {
-                    cd.v = cell.value;
-                    if (typeof cell.value === 'number') cd.t = 2;
-                    else if (typeof cell.value === 'string') cd.t = 1;
-                    else if (typeof cell.value === 'boolean') cd.t = 3;
+                const hasValue = cell.type !== ExcelJS.ValueType.Null && cell.value != null;
+                const hasBorder = !!cell.border && (!!cell.border.top || !!cell.border.bottom || !!cell.border.left || !!cell.border.right);
+                const hasFill = !!cell.fill && cell.fill.type === 'pattern' && (cell.fill as ExcelJS.FillPattern).pattern !== 'none';
+                const hasFont = !!cell.font && (!!cell.font.bold || !!cell.font.color || !!cell.font.name || !!cell.font.size);
+
+                // Jika sel tidak punya nilai, border, fill, font, dan bukan bagian merge: lewati (hemat RAM)
+                if (!hasValue && !hasBorder && !hasFill && !hasFont && !mergeInfo) {
+                    continue;
                 }
 
-                // ── Style ─────────────────────────────────────────────────
-                // Cek apakah sel ini merupakan master dari merge range
-                const mergeObj = mergeMasterMap.get(`${r}:${c}`);
-                const combinedBorder = mergeObj ? getCombinedBorderForMerge(ws, mergeObj) : null;
+                const cd: any = {};
+                const isStringCell = cell.type === ExcelJS.ValueType.String;
 
-                const style = buildUniverStyle(cell, isStringCell, combinedBorder);
-                const sid = getStyleId(style);
-                if (sid) cd.s = sid;
+                // ── A. Nilai sel ──────────────────────────────────────────────
+                // Slave cell tidak menyimpan nilai (nilai hanya ada di master cell)
+                if (!isSlave) {
+                    if (cell.type === ExcelJS.ValueType.Formula) {
+                        const fv = cell.value as ExcelJS.CellFormulaValue;
+                        if (fv.formula) cd.f = fv.formula;
+                        if (fv.result != null) {
+                            if (fv.result instanceof Date) {
+                                const d = fv.result;
+                                cd.v = `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`;
+                                cd.t = 1;
+                            } else {
+                                cd.v = fv.result;
+                                if (typeof cd.v === 'number') cd.t = 2;
+                                else if (typeof cd.v === 'string') cd.t = 1;
+                                else if (typeof cd.v === 'boolean') cd.t = 3;
+                            }
+                        }
+                    } else if (cell.type === ExcelJS.ValueType.Date) {
+                        // Format M/D/YYYY sesuai serial Excel asli
+                        const d = cell.value as Date;
+                        const m = d.getUTCMonth() + 1;
+                        const day = d.getUTCDate();
+                        const y = d.getUTCFullYear();
+                        cd.v = `${m}/${day}/${y}`;
+                        cd.t = 1;
+                    } else if (cell.type === ExcelJS.ValueType.RichText) {
+                        const rt = cell.value as { richText: Array<{ text: string }> };
+                        cd.v = (rt.richText || []).map((part) => part.text).join('');
+                        cd.t = 1;
+                    } else if (hasValue) {
+                        cd.v = cell.value;
+                        if (typeof cell.value === 'number') cd.t = 2;
+                        else if (typeof cell.value === 'string') cd.t = 1;
+                        else if (typeof cell.value === 'boolean') cd.t = 3;
+                    }
+                }
+
+                // ── B. Border sel (Master, Slave, dan Normal) ──────────────────
+                let bTop = cell.border?.top;
+                let bBottom = cell.border?.bottom;
+                let bLeft = cell.border?.left;
+                let bRight = cell.border?.right;
+
+                if (isMaster && mergeInfo) {
+                    // Gabungkan batas luar merge ke master cell
+                    const bottomCell = ws.getCell(mergeInfo.endRow + 1, mergeInfo.startColumn + 1);
+                    const rightCell = ws.getCell(mergeInfo.startRow + 1, mergeInfo.endColumn + 1);
+                    if (bottomCell.border?.bottom) bBottom = bottomCell.border.bottom;
+                    if (rightCell.border?.right) bRight = rightCell.border.right;
+                } else if (isSlave && mergeInfo) {
+                    // Pastikan slave cell di batas luar merge membawa border sisi batas tersebut
+                    if (r === mergeInfo.endRow && !bBottom) {
+                        const bottomRef = ws.getCell(mergeInfo.endRow + 1, mergeInfo.startColumn + 1);
+                        bBottom = bottomRef.border?.bottom;
+                    }
+                    if (c === mergeInfo.endColumn && !bRight) {
+                        const rightRef = ws.getCell(mergeInfo.startRow + 1, mergeInfo.endColumn + 1);
+                        bRight = rightRef.border?.right;
+                    }
+                    if (r === mergeInfo.startRow && !bTop) {
+                        const topRef = ws.getCell(mergeInfo.startRow + 1, mergeInfo.startColumn + 1);
+                        bTop = topRef.border?.top;
+                    }
+                    if (c === mergeInfo.startColumn && !bLeft) {
+                        const leftRef = ws.getCell(mergeInfo.startRow + 1, mergeInfo.startColumn + 1);
+                        bLeft = leftRef.border?.left;
+                    }
+                }
+
+                const bd: Record<string, any> = {};
+                const t = convertOneBorder(bTop);
+                const b = convertOneBorder(bBottom);
+                const l = convertOneBorder(bLeft);
+                const rSide = convertOneBorder(bRight);
+                if (t) bd.t = t;
+                if (b) bd.b = b;
+                if (l) bd.l = l;
+                if (rSide) bd.r = rSide;
+
+                // ── C. Style sel ──────────────────────────────────────────────
+                const style: Record<string, any> = {
+                    ...convertFont(cell.font),
+                    ...convertFill(cell.fill),
+                    ...convertAlignment(cell.alignment),
+                };
+
+                if (Object.keys(bd).length > 0) {
+                    style.bd = bd;
+                }
+
+                // Anti-corruption NIK: String tidak boleh dipasang format tanggal
+                if (cell.numFmt && cell.numFmt !== 'General' && !isStringCell) {
+                    style.n = { pattern: cell.numFmt };
+                }
+
+                if (Object.keys(style).length > 0) {
+                    const sid = getStyleId(style);
+                    if (sid) cd.s = sid;
+                }
 
                 if (Object.keys(cd).length > 0) {
                     if (!cellData[r]) cellData[r] = {};
                     cellData[r][c] = cd;
                 }
-            });
+            }
         });
 
         const rowCount = Math.max(ws.rowCount + 10, 100);
