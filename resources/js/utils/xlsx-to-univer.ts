@@ -235,7 +235,7 @@ function convertAlignment(al: Partial<ExcelJS.Alignment> | undefined): Record<st
 }
 
 function convertOneBorder(side: Partial<ExcelJS.Border> | undefined): any {
-    if (!side?.style || side.style === 'none') return undefined;
+    if (!side?.style || (side.style as string) === 'none') return undefined;
     const s = BORDER_TO_UNIVER[side.style] ?? 1;
     const rgb = excelColorToRgb(side.color) ?? '#000000';
     return { s, cl: { rgb } };
@@ -312,8 +312,8 @@ export async function xlsxToUniverSnapshot(buffer: ArrayBuffer): Promise<any> {
                 (v.ySplit != null && v.ySplit > 0) ||
                 (v.xSplit != null && v.xSplit > 0),
         );
-        const xSplit = freezeView?.xSplit ?? 0;
-        const ySplit = freezeView?.ySplit ?? 0;
+        const xSplit = (freezeView as any)?.xSplit ?? 0;
+        const ySplit = (freezeView as any)?.ySplit ?? 0;
         const freeze = {
             xSplit,
             ySplit,

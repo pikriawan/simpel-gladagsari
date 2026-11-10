@@ -33,6 +33,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('marriage-dispensation', [MarriageDispensationController::class, 'store'])->name('marriage-dispensation.store');
         Route::delete('marriage-dispensation/{marriageDispensation}', [MarriageDispensationController::class, 'destroy'])->name('marriage-dispensation.destroy');
         Route::get('paten-registration', [PatenRegistrationController::class, 'index'])->name('paten-registration');
+        Route::get('paten-registration/editor', [PatenRegistrationController::class, 'editor'])->name('paten-registration.editor');
+        Route::get('paten-registration/template', [PatenRegistrationController::class, 'template'])->name('paten-registration.template');
+        Route::get('paten-registration/template-snapshot', [PatenRegistrationController::class, 'templateSnapshot'])->name('paten-registration.template-snapshot');
         Route::post('paten-registration', [PatenRegistrationController::class, 'store'])->name('paten-registration.store');
     });
 });

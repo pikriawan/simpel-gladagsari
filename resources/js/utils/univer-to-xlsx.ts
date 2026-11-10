@@ -22,8 +22,7 @@ const WrapStrategy    = { UNSPECIFIED: 0, OVERFLOW: 1, CLIP: 2, WRAP: 3 } as con
 const BooleanNumber   = { FALSE: 0, TRUE: 1 } as const;
 
 // BorderStyleTypes → ExcelJS border style string
-const BORDER_STYLE_MAP: Record<number, ExcelJS.BorderStyle> = {
-    0:  'none',
+const BORDER_STYLE_MAP: Partial<Record<number, ExcelJS.BorderStyle>> = {
     1:  'thin',
     2:  'hair',
     3:  'dotted',
@@ -41,20 +40,42 @@ const BORDER_STYLE_MAP: Record<number, ExcelJS.BorderStyle> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Univer simpan warna sebagai "#RRGGBB" atau "rgb(r,g,b)". ExcelJS pakai "AARRGGBB". */
-function toArgb(rgb: string | undefined | null): string | undefined {
-    if (!rgb) return undefined;
-    // "#RRGGBB"
-    const hex = rgb.match(/^#?([0-9A-Fa-f]{6})$/);
+/** Univer simpan warna sebagai "#RRGGBB", "rgb(r,g,b)", objek { rgb: ... }, dll. ExcelJS pakai "AARRGGBB". */
+function toArgb(raw: any): string | undefined {
+    if (!raw) return undefined;
+    let val = raw;
+    while (val && typeof val === 'object') {
+        val = val.rgb ?? val.argb ?? val.color;
+    }
+    if (!val || typeof val !== 'string') return undefined;
+
+    // "#RRGGBB" atau "RRGGBB"
+    const hex = val.match(/^#?([0-9A-Fa-f]{6})$/);
     if (hex) return `FF${hex[1].toUpperCase()}`;
+
+    // "#AARRGGBB" atau "AARRGGBB"
+    const hexAlpha = val.match(/^#?([0-9A-Fa-f]{8})$/);
+    if (hexAlpha) return hexAlpha[1].toUpperCase();
+
     // "rgb(r, g, b)"
-    const match = rgb.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+    const match = val.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
     if (match) {
         const r = parseInt(match[1]).toString(16).padStart(2, '0');
         const g = parseInt(match[2]).toString(16).padStart(2, '0');
         const b = parseInt(match[3]).toString(16).padStart(2, '0');
         return `FF${r}${g}${b}`.toUpperCase();
     }
+
+    // "rgba(r, g, b, a)"
+    const matchA = val.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/i);
+    if (matchA) {
+        const a = Math.round(parseFloat(matchA[4]) * 255).toString(16).padStart(2, '0');
+        const r = parseInt(matchA[1]).toString(16).padStart(2, '0');
+        const g = parseInt(matchA[2]).toString(16).padStart(2, '0');
+        const b = parseInt(matchA[3]).toString(16).padStart(2, '0');
+        return `${a}${r}${g}${b}`.toUpperCase();
+    }
+
     return undefined;
 }
 
@@ -82,12 +103,27 @@ function resolveStyle(
 function buildBorderSide(side: any): Partial<ExcelJS.Border> | undefined {
     if (!side || side.s == null) return undefined;
     const style = BORDER_STYLE_MAP[side.s as number];
-    if (!style || style === 'none') return undefined;
-    const argb = toArgb(side.cl?.rgb);
+    if (!style) return undefined;
+    const argb = toArgb(side.cl);
     return {
         style,
         color: argb ? { argb } : { argb: 'FF000000' },
     };
+}
+
+/** Mengambil IBorderStyleData dari sel Univer pada koordinat (r, c). */
+function getCellBorderStyle(
+    cellData: Record<number, any>,
+    stylesMap: Record<string, any>,
+    r: number,
+    c: number,
+): any {
+    const row = cellData[r];
+    if (!row) return null;
+    const cell = row[c];
+    if (!cell) return null;
+    const style = resolveStyle(cell.s, stylesMap);
+    return style?.bd ?? null;
 }
 
 /** Mapping HorizontalAlign Univer → ExcelJS alignment string. */
@@ -251,18 +287,277 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             }
         }
 
-        // ── 3. Merge cells ───────────────────────────────────────────────────
+        // ── 3. Merge cells & border keliling ────────────────────────────────
         // mergeData: IRange[] → { startRow, startColumn, endRow, endColumn }
         for (const merge of mergeData) {
+            const startRow = Math.min(merge.startRow, merge.endRow);
+            const endRow   = Math.max(merge.startRow, merge.endRow);
+            const startCol = Math.min(merge.startColumn, merge.endColumn);
+            const endCol   = Math.max(merge.startColumn, merge.endColumn);
+
+            // 1. Top border:
+            // a. Cek sepanjang baris teratas merge range (startRow, startCol..endCol)
+            let topBorder: Partial<ExcelJS.Border> | undefined;
+            for (let c = startCol; c <= endCol; c++) {
+                const bd = getCellBorderStyle(cellData, stylesMap, startRow, c);
+                topBorder = buildBorderSide(bd?.t);
+                if (topBorder) break;
+            }
+            // b. Fallback: cek sel tepat di atas merge range (startRow - 1, startCol..endCol) yang punya border bottom
+            if (!topBorder && startRow > 0) {
+                for (let c = startCol; c <= endCol; c++) {
+                    const bd = getCellBorderStyle(cellData, stylesMap, startRow - 1, c);
+                    topBorder = buildBorderSide(bd?.b);
+                    if (topBorder) break;
+                }
+            }
+            // c. Fallback: cek border yang sudah terpasang di excelCell
+            if (!topBorder) {
+                for (let c = startCol; c <= endCol; c++) {
+                    topBorder = ws.getCell(startRow + 1, c + 1).border?.top;
+                    if (topBorder) break;
+                }
+            }
+            if (!topBorder && startRow > 0) {
+                for (let c = startCol; c <= endCol; c++) {
+                    topBorder = ws.getCell(startRow, c + 1).border?.bottom;
+                    if (topBorder) break;
+                }
+            }
+            // d. Fallback: scan seluruh sel di merge range
+            if (!topBorder) {
+                for (let r = startRow; r <= endRow && !topBorder; r++) {
+                    for (let c = startCol; c <= endCol; c++) {
+                        const bd = getCellBorderStyle(cellData, stylesMap, r, c);
+                        topBorder = buildBorderSide(bd?.t);
+                        if (topBorder) break;
+                    }
+                }
+            }
+
+            // 2. Bottom border:
+            // a. Cek sepanjang baris terbawah merge range (endRow, startCol..endCol)
+            let bottomBorder: Partial<ExcelJS.Border> | undefined;
+            for (let c = startCol; c <= endCol; c++) {
+                const bd = getCellBorderStyle(cellData, stylesMap, endRow, c);
+                bottomBorder = buildBorderSide(bd?.b);
+                if (bottomBorder) break;
+            }
+            // b. Fallback: cek sel tepat di bawah merge range (endRow + 1, startCol..endCol) yang punya border top
+            if (!bottomBorder) {
+                for (let c = startCol; c <= endCol; c++) {
+                    const bd = getCellBorderStyle(cellData, stylesMap, endRow + 1, c);
+                    bottomBorder = buildBorderSide(bd?.t);
+                    if (bottomBorder) break;
+                }
+            }
+            // c. Fallback: cek border yang sudah terpasang di excelCell
+            if (!bottomBorder) {
+                for (let c = startCol; c <= endCol; c++) {
+                    bottomBorder = ws.getCell(endRow + 1, c + 1).border?.bottom;
+                    if (bottomBorder) break;
+                }
+            }
+            if (!bottomBorder) {
+                for (let c = startCol; c <= endCol; c++) {
+                    bottomBorder = ws.getCell(endRow + 2, c + 1).border?.top;
+                    if (bottomBorder) break;
+                }
+            }
+            // d. Fallback: cek master cell jika ada border bottom
+            if (!bottomBorder) {
+                const bd = getCellBorderStyle(cellData, stylesMap, startRow, startCol);
+                bottomBorder = buildBorderSide(bd?.b);
+            }
+            // e. Fallback: scan seluruh sel di merge range
+            if (!bottomBorder) {
+                for (let r = endRow; r >= startRow && !bottomBorder; r--) {
+                    for (let c = startCol; c <= endCol; c++) {
+                        const bd = getCellBorderStyle(cellData, stylesMap, r, c);
+                        bottomBorder = buildBorderSide(bd?.b);
+                        if (bottomBorder) break;
+                    }
+                }
+            }
+
+            // 3. Left border:
+            // a. Cek sepanjang kolom terkiri merge range (startCol, startRow..endRow)
+            let leftBorder: Partial<ExcelJS.Border> | undefined;
+            for (let r = startRow; r <= endRow; r++) {
+                const bd = getCellBorderStyle(cellData, stylesMap, r, startCol);
+                leftBorder = buildBorderSide(bd?.l);
+                if (leftBorder) break;
+            }
+            // b. Fallback: cek sel tepat di sebelah kiri merge range (r, startCol - 1) yang punya border right
+            if (!leftBorder && startCol > 0) {
+                for (let r = startRow; r <= endRow; r++) {
+                    const bd = getCellBorderStyle(cellData, stylesMap, r, startCol - 1);
+                    leftBorder = buildBorderSide(bd?.r);
+                    if (leftBorder) break;
+                }
+            }
+            // c. Fallback: cek excelCell
+            if (!leftBorder) {
+                for (let r = startRow; r <= endRow; r++) {
+                    leftBorder = ws.getCell(r + 1, startCol + 1).border?.left;
+                    if (leftBorder) break;
+                }
+            }
+            if (!leftBorder && startCol > 0) {
+                for (let r = startRow; r <= endRow; r++) {
+                    leftBorder = ws.getCell(r + 1, startCol).border?.right;
+                    if (leftBorder) break;
+                }
+            }
+            // d. Fallback: scan seluruh sel di merge range
+            if (!leftBorder) {
+                for (let c = startCol; c <= endCol && !leftBorder; c++) {
+                    for (let r = startRow; r <= endRow; r++) {
+                        const bd = getCellBorderStyle(cellData, stylesMap, r, c);
+                        leftBorder = buildBorderSide(bd?.l);
+                        if (leftBorder) break;
+                    }
+                }
+            }
+
+            // 4. Right border:
+            // a. Cek sepanjang kolom terkanan merge range (endCol, startRow..endRow)
+            let rightBorder: Partial<ExcelJS.Border> | undefined;
+            for (let r = startRow; r <= endRow; r++) {
+                const bd = getCellBorderStyle(cellData, stylesMap, r, endCol);
+                rightBorder = buildBorderSide(bd?.r);
+                if (rightBorder) break;
+            }
+            // b. Fallback: cek sel tepat di sebelah kanan merge range (r, endCol + 1) yang punya border left
+            if (!rightBorder) {
+                for (let r = startRow; r <= endRow; r++) {
+                    const bd = getCellBorderStyle(cellData, stylesMap, r, endCol + 1);
+                    rightBorder = buildBorderSide(bd?.l);
+                    if (rightBorder) break;
+                }
+            }
+            // c. Fallback: cek excelCell
+            if (!rightBorder) {
+                for (let r = startRow; r <= endRow; r++) {
+                    rightBorder = ws.getCell(r + 1, endCol + 1).border?.right;
+                    if (rightBorder) break;
+                }
+            }
+            if (!rightBorder) {
+                for (let r = startRow; r <= endRow; r++) {
+                    rightBorder = ws.getCell(r + 1, endCol + 2).border?.left;
+                    if (rightBorder) break;
+                }
+            }
+            // d. Fallback: scan seluruh sel di merge range
+            if (!rightBorder) {
+                for (let c = endCol; c >= startCol && !rightBorder; c--) {
+                    for (let r = startRow; r <= endRow; r++) {
+                        const bd = getCellBorderStyle(cellData, stylesMap, r, c);
+                        rightBorder = buildBorderSide(bd?.r);
+                        if (rightBorder) break;
+                    }
+                }
+            }
+
+            const masterCell = ws.getCell(startRow + 1, startCol + 1);
+
+            // Mewarisi nilai jika master cell kosong tetapi salah satu slave cell punya nilai
+            if (masterCell.value == null || masterCell.value === '') {
+                for (let r = startRow; r <= endRow; r++) {
+                    for (let c = startCol; c <= endCol; c++) {
+                        const slaveInfo = cellData[r]?.[c];
+                        if (!slaveInfo) continue;
+                        if (slaveInfo.f) {
+                            masterCell.value = { formula: slaveInfo.f };
+                            break;
+                        } else if (slaveInfo.p) {
+                            const plainText = extractPlainText(slaveInfo.p);
+                            if (plainText) {
+                                masterCell.value = plainText;
+                                break;
+                            }
+                        } else if (slaveInfo.v !== undefined && slaveInfo.v !== null && slaveInfo.v !== '') {
+                            masterCell.value = slaveInfo.v;
+                            break;
+                        }
+                    }
+                    if (masterCell.value != null && masterCell.value !== '') break;
+                }
+            }
+
+            // Mewarisi fill/background jika master cell belum punya fill
+            if (!masterCell.fill) {
+                for (let r = startRow; r <= endRow; r++) {
+                    for (let c = startCol; c <= endCol; c++) {
+                        const s = resolveStyle(cellData[r]?.[c]?.s, stylesMap);
+                        const bgArgb = toArgb(s?.bg?.rgb ?? s?.bg);
+                        if (bgArgb) {
+                            masterCell.fill = {
+                                type: 'pattern',
+                                pattern: 'solid',
+                                fgColor: { argb: bgArgb },
+                            };
+                            break;
+                        }
+                    }
+                    if (masterCell.fill) break;
+                }
+            }
+
+            // Mewarisi alignment jika belum lengkap (misal merge-and-center)
+            const curAlign = (masterCell.alignment || {}) as Partial<ExcelJS.Alignment>;
+            let alignChanged = false;
+            if (!curAlign.horizontal || !curAlign.vertical) {
+                for (let r = startRow; r <= endRow; r++) {
+                    for (let c = startCol; c <= endCol; c++) {
+                        const s = resolveStyle(cellData[r]?.[c]?.s, stylesMap);
+                        if (!s) continue;
+                        const h = mapHAlign(s.ht);
+                        const v = mapVAlign(s.vt);
+                        if (!curAlign.horizontal && h) {
+                            curAlign.horizontal = h;
+                            alignChanged = true;
+                        }
+                        if (!curAlign.vertical && v) {
+                            curAlign.vertical = v;
+                            alignChanged = true;
+                        }
+                        if (s.tb === WrapStrategy.WRAP && !curAlign.wrapText) {
+                            curAlign.wrapText = true;
+                            alignChanged = true;
+                        }
+                    }
+                }
+            }
+            if (alignChanged) {
+                masterCell.alignment = curAlign as ExcelJS.Alignment;
+            }
+
+            const existingBorder = masterCell.border || {};
+            const newBorder: Partial<ExcelJS.Borders> = { ...existingBorder };
+            if (topBorder)    newBorder.top    = topBorder;
+            if (bottomBorder) newBorder.bottom = bottomBorder;
+            if (leftBorder)   newBorder.left   = leftBorder;
+            if (rightBorder)  newBorder.right  = rightBorder;
+
+            if (Object.keys(newBorder).length > 0) {
+                masterCell.border = newBorder as ExcelJS.Borders;
+            }
+
             try {
-                ws.mergeCells(
-                    merge.startRow + 1,
-                    merge.startColumn + 1,
-                    merge.endRow + 1,
-                    merge.endColumn + 1,
-                );
+                ws.mergeCells(startRow + 1, startCol + 1, endRow + 1, endCol + 1);
             } catch {
                 // abaikan merge yang tumpang tindih
+            }
+
+            // Pastikan seluruh sel di dalam merged range memiliki border keliling yang seragam
+            if (Object.keys(newBorder).length > 0) {
+                for (let r = startRow + 1; r <= endRow + 1; r++) {
+                    for (let c = startCol + 1; c <= endCol + 1; c++) {
+                        ws.getCell(r, c).border = newBorder as ExcelJS.Borders;
+                    }
+                }
             }
         }
     }

@@ -12,6 +12,11 @@ class PatenRegistrationController extends Controller
 {
     public function index(): Response
     {
+        return $this->editor();
+    }
+
+    public function editor(): Response
+    {
         $snapshot = null;
 
         if (Storage::disk('public')->exists('paten-registration/snapshot.json')) {
@@ -25,19 +30,62 @@ class PatenRegistrationController extends Controller
             }
         }
 
-        return Inertia::render('paten-registration', [
+        return Inertia::render('paten-registration/editor', [
             'snapshot' => $snapshot,
         ]);
+    }
+
+    public function template(): Response
+    {
+        $snapshot = null;
+
+        if (Storage::disk('public')->exists('paten-registration/template-snapshot.json')) {
+            $decoded = json_decode(
+                Storage::disk('public')->get('paten-registration/template-snapshot.json'),
+                true,
+            );
+
+            if (is_array($decoded)) {
+                $snapshot = $decoded;
+            }
+        }
+
+        return Inertia::render('paten-registration/template', [
+            'snapshot' => $snapshot,
+        ]);
+    }
+
+    public function templateSnapshot(): JsonResponse
+    {
+        $snapshot = null;
+
+        if (Storage::disk('public')->exists('paten-registration/template-snapshot.json')) {
+            $decoded = json_decode(
+                Storage::disk('public')->get('paten-registration/template-snapshot.json'),
+                true,
+            );
+
+            if (is_array($decoded)) {
+                $snapshot = $decoded;
+            }
+        }
+
+        return response()->json(['snapshot' => $snapshot]);
     }
 
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'snapshot' => ['required'],
+            'target' => ['nullable', 'string', 'in:editor,template'],
         ]);
 
+        $path = ($validated['target'] ?? 'editor') === 'template'
+            ? 'paten-registration/template-snapshot.json'
+            : 'paten-registration/snapshot.json';
+
         Storage::disk('public')->put(
-            'paten-registration/snapshot.json',
+            $path,
             json_encode($validated['snapshot']),
         );
 

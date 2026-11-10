@@ -1,9 +1,8 @@
-import { Head, router, setLayoutProps, resetLayoutProps } from '@inertiajs/react';
+import { Head, setLayoutProps, resetLayoutProps } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { univerSnapshotToExcelJS } from '@/utils/univer-to-xlsx';
 import { xlsxToUniverSnapshot } from '@/utils/xlsx-to-univer';
-import { patenRegistration } from '@/routes';
-import { store as storePatenRegistration } from '@/routes/paten-registration';
+import { editor, store as storePatenRegistration, templateSnapshot as templateSnapshotRoute } from '@/routes/paten-registration';
 import { Button } from '@/components/ui/button';
 
 import { Univer } from '@univerjs/core';
@@ -55,13 +54,13 @@ import '@univerjs/sheets-ui/lib/index.css';
 import '@univerjs/sheets-formula-ui/lib/index.css';
 import '@univerjs/sheets-numfmt-ui/lib/index.css';
 
-export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
+export default function Editor({ snapshot }: { snapshot?: any }) {
     const containerRef        = useRef<HTMLDivElement>(null);
     const univerAPIRef        = useRef<any>(null);
     const saveTimeoutRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const fileInputRef        = useRef<HTMLInputElement>(null);
     const xlsxFileInputRef    = useRef<HTMLInputElement>(null);
     const [isImportingXlsx, setIsImportingXlsx] = useState(false);
+    const [isResettingTemplate, setIsResettingTemplate] = useState(false);
 
     const autoSave = useCallback(() => {
         if (saveTimeoutRef.current) {
@@ -94,28 +93,6 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
         }, 1000);
     }, []);
 
-    const handleExportJson = useCallback(() => {
-        const univerAPI = univerAPIRef.current;
-        if (!univerAPI) return;
-        try {
-            const snapshot = univerAPI.getActiveWorkbook()?.save();
-            if (!snapshot) return;
-            const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
-                type: 'application/json',
-            });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'registrasi-paten.json';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Gagal mengekspor snapshot JSON', error);
-        }
-    }, []);
-
     const handleExportXlsx = useCallback(async () => {
         const univerAPI = univerAPIRef.current;
         if (!univerAPI) return;
@@ -141,59 +118,83 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
         }
     }, []);
 
-    const handleImportClick = useCallback(() => {
-        fileInputRef.current?.click();
-    }, []);
-
-    const handleImportFile = useCallback(
-        (event: ChangeEvent<HTMLInputElement>) => {
-            const file = event.target.files?.[0];
-            if (!file) return;
-            if (
-                !window.confirm(
-                    'Import akan menimpa data workbook saat ini. Lanjutkan?',
-                )
-            ) {
-                if (event.target) {
-                    event.target.value = '';
-                }
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = () => {
-                try {
-                    const parsed = JSON.parse(String(reader.result));
-                    if (!parsed || typeof parsed !== 'object' || !parsed.sheets) {
-                        throw new Error('Format snapshot tidak valid: properti "sheets" tidak ditemukan');
-                    }
-                    // Defer ke macrotask berikutnya agar React selesai render
-                    // terlebih dahulu sebelum kita dispose + recreate workbook
-                    setTimeout(() => {
-                        const univerAPI = univerAPIRef.current;
-                        if (!univerAPI) return;
-                        const current = univerAPI.getActiveWorkbook();
-                        const currentId = current?.getId?.();
-                        if (currentId) univerAPI.disposeUnit(currentId);
-                        univerAPI.createWorkbook(parsed);
-                        autoSave();
-                    }, 0);
-                } catch (error) {
-                    console.error('Gagal mengimpor snapshot JSON', error);
-                    window.alert('Gagal mengimpor file JSON. Pastikan file adalah snapshot Univer yang valid.');
-                } finally {
-                    if (event.target) {
-                        event.target.value = '';
-                    }
-                }
-            };
-            reader.readAsText(file);
-        },
-        [autoSave],
-    );
-
     const handleImportXlsxClick = useCallback(() => {
         xlsxFileInputRef.current?.click();
     }, []);
+
+    const handleClearDocument = useCallback(() => {
+        if (
+            !window.confirm(
+                'Kosongkan dokumen saat ini? Data yang belum tersimpan akan hilang.',
+            )
+        ) {
+            return;
+        }
+
+        const clear = () => {
+            const univerAPI = univerAPIRef.current;
+            if (!univerAPI) return;
+            const current = univerAPI.getActiveWorkbook();
+            const currentId = current?.getId?.();
+            if (currentId) univerAPI.disposeUnit(currentId);
+            univerAPI.createWorkbook({
+                id: 'paten-registration-workbook',
+                name: 'Registrasi PATEN',
+                sheetOrder: ['sheet-1'],
+                sheets: {
+                    'sheet-1': {
+                        id: 'sheet-1',
+                        name: 'Sheet1',
+                        rowCount: 100,
+                        columnCount: 20,
+                    },
+                },
+            });
+            autoSave();
+        };
+
+        // Defer agar React selesai memproses state update
+        setTimeout(clear, 0);
+    }, [autoSave]);
+
+    const handleResetToTemplate = useCallback(async () => {
+        if (
+            !window.confirm(
+                'Reset akan menimpa dokumen saat ini dengan template. Lanjutkan?',
+            )
+        ) {
+            return;
+        }
+
+        setIsResettingTemplate(true);
+        try {
+            const response = await fetch(templateSnapshotRoute().url, {
+                headers: { Accept: 'application/json' },
+            });
+            const data = await response.json();
+            const templateSnapshot = data?.snapshot;
+            if (!templateSnapshot) {
+                window.alert('Template belum tersedia.');
+                return;
+            }
+
+            // Defer agar React selesai memproses state update
+            await new Promise<void>(resolve => setTimeout(resolve, 0));
+
+            const univerAPI = univerAPIRef.current;
+            if (!univerAPI) return;
+            const current = univerAPI.getActiveWorkbook();
+            const currentId = current?.getId?.();
+            if (currentId) univerAPI.disposeUnit(currentId);
+            univerAPI.createWorkbook(templateSnapshot);
+            autoSave();
+        } catch (error) {
+            console.error('Gagal memuat template', error);
+            window.alert('Gagal memuat template.');
+        } finally {
+            setIsResettingTemplate(false);
+        }
+    }, [autoSave]);
 
     const handleImportXlsxFile = useCallback(
         async (event: ChangeEvent<HTMLInputElement>) => {
@@ -260,9 +261,17 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={handleImportClick}
+                        onClick={handleClearDocument}
                     >
-                        Impor (.json)
+                        Kosongkan dokumen
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleResetToTemplate}
+                        disabled={isResettingTemplate}
+                    >
+                        {isResettingTemplate ? 'Memuat...' : 'Reset ke template'}
                     </Button>
                     <Button
                         type="button"
@@ -271,13 +280,6 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
                         disabled={isImportingXlsx}
                     >
                         {isImportingXlsx ? 'Mengimpor...' : 'Impor (.xlsx)'}
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleExportJson}
-                    >
-                        Ekspor (.json)
                     </Button>
                     <Button
                         type="button"
@@ -291,7 +293,7 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
         });
 
         return () => resetLayoutProps();
-    }, [isImportingXlsx]);
+    }, [isImportingXlsx, isResettingTemplate, handleResetToTemplate, handleClearDocument]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -376,15 +378,7 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
 
     return (
         <>
-            <Head title="Registrasi PATEN" />
-
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="application/json"
-                className="hidden"
-                onChange={handleImportFile}
-            />
+            <Head title="Editor" />
 
             <input
                 ref={xlsxFileInputRef}
@@ -402,11 +396,15 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
     );
 }
 
-PatenRegistration.layout = {
+Editor.layout = {
     breadcrumbs: [
         {
             title: 'Registrasi PATEN',
-            href: patenRegistration(),
+            href: editor(),
+        },
+        {
+            title: 'Editor',
+            href: editor(),
         },
     ],
 };

@@ -30,7 +30,11 @@ import {
     SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { dashboard, patenRegistration, userManager } from '@/routes';
+import { dashboard, userManager } from '@/routes';
+import {
+    editor as patenEditor,
+    template as patenTemplate,
+} from '@/routes/paten-registration';
 import {
     editor,
     history,
@@ -54,6 +58,17 @@ const suratDispensasiSubItems = [
     {
         title: 'Pengaturan Template',
         href: templateSettings(),
+    },
+];
+
+const patenRegistrationSubItems = [
+    {
+        title: 'Editor',
+        href: patenEditor(),
+    },
+    {
+        title: 'Template',
+        href: patenTemplate(),
     },
 ];
 
@@ -174,18 +189,52 @@ export function AppSidebar() {
                         )}
 
                         {isService && (
-                            <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={isCurrentUrl(patenRegistration())}
-                                    tooltip={{ children: 'Registrasi PATEN' }}
-                                >
-                                    <Link href={patenRegistration()} prefetch>
-                                        <FileText />
-                                        <span>Registrasi PATEN</span>
-                                    </Link>
-                                </SidebarMenuButton>
-                            </SidebarMenuItem>
+                            <Collapsible
+                                asChild
+                                defaultOpen={patenRegistrationSubItems.some(
+                                    (item) => isCurrentUrl(item.href),
+                                )}
+                                className="group/collapsible"
+                            >
+                                <SidebarMenuItem>
+                                    <CollapsibleTrigger asChild>
+                                        <SidebarMenuButton
+                                            tooltip={{
+                                                children: 'Registrasi PATEN',
+                                            }}
+                                        >
+                                            <FileText />
+                                            <span>Registrasi PATEN</span>
+                                            <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                                        </SidebarMenuButton>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <SidebarMenuSub>
+                                            {patenRegistrationSubItems.map(
+                                                (item) => (
+                                                    <SidebarMenuSubItem
+                                                        key={item.title}
+                                                    >
+                                                        <SidebarMenuSubButton
+                                                            asChild
+                                                            isActive={isCurrentUrl(
+                                                                item.href,
+                                                            )}
+                                                        >
+                                                            <Link
+                                                                href={item.href}
+                                                                prefetch
+                                                            >
+                                                                {item.title}
+                                                            </Link>
+                                                        </SidebarMenuSubButton>
+                                                    </SidebarMenuSubItem>
+                                                ),
+                                            )}
+                                        </SidebarMenuSub>
+                                    </CollapsibleContent>
+                                </SidebarMenuItem>
+                            </Collapsible>
                         )}
                     </SidebarMenu>
                 </SidebarGroup>
