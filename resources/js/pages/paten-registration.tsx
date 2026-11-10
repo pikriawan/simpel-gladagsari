@@ -1,5 +1,7 @@
 import { Head, router, setLayoutProps, resetLayoutProps } from '@inertiajs/react';
-import { useCallback, useEffect, useRef, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
+import { univerSnapshotToExcelJS } from '@/utils/univer-to-xlsx';
+import { xlsxToUniverSnapshot } from '@/utils/xlsx-to-univer';
 import { patenRegistration } from '@/routes';
 import { store as storePatenRegistration } from '@/routes/paten-registration';
 import { Button } from '@/components/ui/button';
@@ -54,10 +56,12 @@ import '@univerjs/sheets-formula-ui/lib/index.css';
 import '@univerjs/sheets-numfmt-ui/lib/index.css';
 
 export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const univerAPIRef = useRef<any>(null);
-    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    const containerRef        = useRef<HTMLDivElement>(null);
+    const univerAPIRef        = useRef<any>(null);
+    const saveTimeoutRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const fileInputRef        = useRef<HTMLInputElement>(null);
+    const xlsxFileInputRef    = useRef<HTMLInputElement>(null);
+    const [isImportingXlsx, setIsImportingXlsx] = useState(false);
 
     const autoSave = useCallback(() => {
         if (saveTimeoutRef.current) {
@@ -112,6 +116,31 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
         }
     }, []);
 
+    const handleExportXlsx = useCallback(async () => {
+        const univerAPI = univerAPIRef.current;
+        if (!univerAPI) return;
+        try {
+            const snapshot = univerAPI.getActiveWorkbook()?.save();
+            if (!snapshot) return;
+
+            const wb = await univerSnapshotToExcelJS(snapshot);
+            const buffer = await wb.xlsx.writeBuffer();
+            const blob = new Blob([buffer], {
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'registrasi-paten.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Gagal mengekspor ke XLSX', error);
+        }
+    }, []);
+
     const handleImportClick = useCallback(() => {
         fileInputRef.current?.click();
     }, []);
@@ -135,19 +164,22 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
                 try {
                     const parsed = JSON.parse(String(reader.result));
                     if (!parsed || typeof parsed !== 'object' || !parsed.sheets) {
-                        throw new Error('Format snapshot tidak valid');
+                        throw new Error('Format snapshot tidak valid: properti "sheets" tidak ditemukan');
                     }
-                    const univerAPI = univerAPIRef.current;
-                    if (!univerAPI) return;
-                    const current = univerAPI.getActiveWorkbook();
-                    const currentId = current?.getId?.();
-                    if (currentId) {
-                        univerAPI.disposeUnit(currentId);
-                    }
-                    univerAPI.createWorkbook(parsed);
-                    autoSave();
+                    // Defer ke macrotask berikutnya agar React selesai render
+                    // terlebih dahulu sebelum kita dispose + recreate workbook
+                    setTimeout(() => {
+                        const univerAPI = univerAPIRef.current;
+                        if (!univerAPI) return;
+                        const current = univerAPI.getActiveWorkbook();
+                        const currentId = current?.getId?.();
+                        if (currentId) univerAPI.disposeUnit(currentId);
+                        univerAPI.createWorkbook(parsed);
+                        autoSave();
+                    }, 0);
                 } catch (error) {
                     console.error('Gagal mengimpor snapshot JSON', error);
+                    window.alert('Gagal mengimpor file JSON. Pastikan file adalah snapshot Univer yang valid.');
                 } finally {
                     if (event.target) {
                         event.target.value = '';
@@ -155,6 +187,68 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
                 }
             };
             reader.readAsText(file);
+        },
+        [autoSave],
+    );
+
+    const handleImportXlsxClick = useCallback(() => {
+        xlsxFileInputRef.current?.click();
+    }, []);
+
+    const handleImportXlsxFile = useCallback(
+        async (event: ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            // Peringatan ukuran file besar — lebih dari 15 MB berpotensi berat
+            if (file.size > 15 * 1024 * 1024) {
+                if (
+                    !window.confirm(
+                        `File berukuran ${(file.size / 1024 / 1024).toFixed(1)} MB.\n` +
+                        'File besar dapat membutuhkan waktu dan memori yang banyak. Lanjutkan?',
+                    )
+                ) {
+                    event.target.value = '';
+                    return;
+                }
+            }
+
+            if (
+                !window.confirm(
+                    'Import akan menimpa data workbook saat ini. Lanjutkan?',
+                )
+            ) {
+                event.target.value = '';
+                return;
+            }
+
+            setIsImportingXlsx(true);
+            try {
+                // Baca file sebagai ArrayBuffer — tidak perlu konversi ke base64
+                const buffer = await file.arrayBuffer();
+
+                // Konversi XLSX → snapshot Univer (heavy lifting di sini)
+                const univerSnapshot = await xlsxToUniverSnapshot(buffer);
+
+                // Defer ke macrotask berikutnya — pastikan React sudah selesai
+                // memproses state update setIsImportingXlsx(true) sebelum kita
+                // dispose + recreate workbook (mencegah "synchronously unmount" error)
+                await new Promise<void>(resolve => setTimeout(resolve, 0));
+
+                const univerAPI = univerAPIRef.current;
+                if (!univerAPI) return;
+                const current   = univerAPI.getActiveWorkbook();
+                const currentId = current?.getId?.();
+                if (currentId) univerAPI.disposeUnit(currentId);
+                univerAPI.createWorkbook(univerSnapshot);
+                autoSave();
+            } catch (error) {
+                console.error('Gagal mengimpor file XLSX', error);
+                window.alert('Gagal mengimpor file. Pastikan file adalah format XLSX yang valid.');
+            } finally {
+                setIsImportingXlsx(false);
+                event.target.value = '';
+            }
         },
         [autoSave],
     );
@@ -173,16 +267,31 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
                     <Button
                         type="button"
                         variant="outline"
+                        onClick={handleImportXlsxClick}
+                        disabled={isImportingXlsx}
+                    >
+                        {isImportingXlsx ? 'Mengimpor...' : 'Impor (.xlsx)'}
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
                         onClick={handleExportJson}
                     >
                         Ekspor (.json)
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleExportXlsx}
+                    >
+                        Ekspor (.xlsx)
                     </Button>
                 </>
             ),
         });
 
         return () => resetLayoutProps();
-    }, []);
+    }, [isImportingXlsx]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -275,6 +384,14 @@ export default function PatenRegistration({ snapshot }: { snapshot?: any }) {
                 accept="application/json"
                 className="hidden"
                 onChange={handleImportFile}
+            />
+
+            <input
+                ref={xlsxFileInputRef}
+                type="file"
+                accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                className="hidden"
+                onChange={handleImportXlsxFile}
             />
 
             <div
