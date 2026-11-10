@@ -19,9 +19,9 @@ class PatenRegistrationController extends Controller
     {
         $snapshot = null;
 
-        if (Storage::disk('public')->exists('paten-registration/snapshot.json')) {
+        if (Storage::exists('paten-registration/snapshot.json')) {
             $decoded = json_decode(
-                Storage::disk('public')->get('paten-registration/snapshot.json'),
+                Storage::get('paten-registration/snapshot.json'),
                 true,
             );
 
@@ -39,9 +39,9 @@ class PatenRegistrationController extends Controller
     {
         $snapshot = null;
 
-        if (Storage::disk('public')->exists('paten-registration/template-snapshot.json')) {
+        if (Storage::exists('paten-registration/template-snapshot.json')) {
             $decoded = json_decode(
-                Storage::disk('public')->get('paten-registration/template-snapshot.json'),
+                Storage::get('paten-registration/template-snapshot.json'),
                 true,
             );
 
@@ -59,9 +59,9 @@ class PatenRegistrationController extends Controller
     {
         $snapshot = null;
 
-        if (Storage::disk('public')->exists('paten-registration/template-snapshot.json')) {
+        if (Storage::exists('paten-registration/template-snapshot.json')) {
             $decoded = json_decode(
-                Storage::disk('public')->get('paten-registration/template-snapshot.json'),
+                Storage::get('paten-registration/template-snapshot.json'),
                 true,
             );
 
@@ -84,7 +84,7 @@ class PatenRegistrationController extends Controller
             ? 'paten-registration/template-snapshot.json'
             : 'paten-registration/snapshot.json';
 
-        Storage::disk('public')->put(
+        Storage::put(
             $path,
             json_encode($validated['snapshot']),
         );
