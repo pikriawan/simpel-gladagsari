@@ -381,7 +381,7 @@ userManager.form = userManagerForm
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::patenRegistration
-* @see app/Http/Controllers/PatenRegistrationController.php:13
+* @see app/Http/Controllers/PatenRegistrationController.php:15
 * @route '/paten-registration'
 */
 export const patenRegistration = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -396,7 +396,7 @@ patenRegistration.definition = {
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::patenRegistration
-* @see app/Http/Controllers/PatenRegistrationController.php:13
+* @see app/Http/Controllers/PatenRegistrationController.php:15
 * @route '/paten-registration'
 */
 patenRegistration.url = (options?: RouteQueryOptions) => {
@@ -405,7 +405,7 @@ patenRegistration.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::patenRegistration
-* @see app/Http/Controllers/PatenRegistrationController.php:13
+* @see app/Http/Controllers/PatenRegistrationController.php:15
 * @route '/paten-registration'
 */
 patenRegistration.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -415,7 +415,7 @@ patenRegistration.get = (options?: RouteQueryOptions): RouteDefinition<'get'> =>
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::patenRegistration
-* @see app/Http/Controllers/PatenRegistrationController.php:13
+* @see app/Http/Controllers/PatenRegistrationController.php:15
 * @route '/paten-registration'
 */
 patenRegistration.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -425,7 +425,7 @@ patenRegistration.head = (options?: RouteQueryOptions): RouteDefinition<'head'> 
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::patenRegistration
-* @see app/Http/Controllers/PatenRegistrationController.php:13
+* @see app/Http/Controllers/PatenRegistrationController.php:15
 * @route '/paten-registration'
 */
 const patenRegistrationForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -435,7 +435,7 @@ const patenRegistrationForm = (options?: RouteQueryOptions): RouteFormDefinition
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::patenRegistration
-* @see app/Http/Controllers/PatenRegistrationController.php:13
+* @see app/Http/Controllers/PatenRegistrationController.php:15
 * @route '/paten-registration'
 */
 patenRegistrationForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -445,7 +445,7 @@ patenRegistrationForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::patenRegistration
-* @see app/Http/Controllers/PatenRegistrationController.php:13
+* @see app/Http/Controllers/PatenRegistrationController.php:15
 * @route '/paten-registration'
 */
 patenRegistrationForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

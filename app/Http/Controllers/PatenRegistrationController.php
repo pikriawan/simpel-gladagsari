@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PatenRegistrationSnapshot;
+use App\Models\PatenRegistrationTemplateSnapshot;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,11 +19,11 @@ class PatenRegistrationController extends Controller
 
     public function editor(): Response
     {
-        $snapshot = null;
+        $snapshot = PatenRegistrationSnapshot::first();
 
-        if (Storage::exists('paten-registration/snapshot.json')) {
+        if ($snapshot) {
             $decoded = json_decode(
-                Storage::get('paten-registration/snapshot.json'),
+                $snapshot->snapshot,
                 true,
             );
 
@@ -37,11 +39,11 @@ class PatenRegistrationController extends Controller
 
     public function template(): Response
     {
-        $snapshot = null;
+        $snapshot = PatenRegistrationTemplateSnapshot::first();
 
-        if (Storage::exists('paten-registration/template-snapshot.json')) {
+        if ($snapshot) {
             $decoded = json_decode(
-                Storage::get('paten-registration/template-snapshot.json'),
+                $snapshot->snapshot,
                 true,
             );
 
@@ -57,11 +59,11 @@ class PatenRegistrationController extends Controller
 
     public function templateSnapshot(): JsonResponse
     {
-        $snapshot = null;
+        $snapshot = PatenRegistrationTemplateSnapshot::first();;
 
-        if (Storage::exists('paten-registration/template-snapshot.json')) {
+        if ($snapshot) {
             $decoded = json_decode(
-                Storage::get('paten-registration/template-snapshot.json'),
+                $snapshot->snapshot,
                 true,
             );
 
@@ -80,14 +82,20 @@ class PatenRegistrationController extends Controller
             'target' => ['nullable', 'string', 'in:editor,template'],
         ]);
 
-        $path = ($validated['target'] ?? 'editor') === 'template'
-            ? 'paten-registration/template-snapshot.json'
-            : 'paten-registration/snapshot.json';
+        $model = ($validated['target'] ?? 'editor') === 'template'
+            ? PatenRegistrationTemplateSnapshot::class
+            : PatenRegistrationSnapshot::class;
 
-        Storage::put(
-            $path,
-            json_encode($validated['snapshot']),
-        );
+        $snapshot = $model::first();
+
+        if (!$snapshot) {
+            $model::create([
+                'snapshot' => json_encode($validated['snapshot']),
+            ]);
+        } else {
+            $snapshot->snapshot = json_encode($validated['snapshot']);
+            $snapshot->save();
+        }
 
         return response()->json(['success' => true]);
     }
