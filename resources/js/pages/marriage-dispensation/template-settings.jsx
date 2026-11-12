@@ -124,7 +124,7 @@ export default function PengaturanTemplate({ settings = {} }) {
         <>
             <Head title="Pengaturan Template" />
 
-            <div className="flex-1 overflow-auto p-6">
+            <div className="flex-1 max-h-[calc(100svh-5rem)] min-h-0 overflow-auto p-6">
                 <h1 className="mb-6 text-xl font-bold tracking-tight text-foreground">
                     Pengaturan Template
                 </h1>

@@ -201,7 +201,7 @@ export default function DataDesaDukuh() {
         <>
             <Head title="Data Desa dan Dukuh" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex max-h-[calc(100svh-5rem)] min-h-0 w-full flex-1 flex-col gap-4 overflow-auto rounded-xl p-4">
                 <h1 className="text-lg font-semibold text-foreground">
                     Data Desa dan Dukuh
                 </h1>
