@@ -72,6 +72,9 @@ export default function Template({ snapshot }: { snapshot?: any }) {
                 const fWorkbook = univerAPI.getActiveWorkbook();
                 if (!fWorkbook) return;
                 const snapshot = fWorkbook.save();
+                if (snapshot.styles && Array.isArray(snapshot.styles)) {
+                    snapshot.styles = {};
+                }
                 const token = document
                     .querySelector('meta[name="csrf-token"]')
                     ?.getAttribute('content');
@@ -397,6 +400,9 @@ export default function Template({ snapshot }: { snapshot?: any }) {
         let loadedFromSnapshot = false;
         try {
             if (snapshot) {
+                if (snapshot.styles && Array.isArray(snapshot.styles)) {
+                    snapshot.styles = {};
+                }
                 univerAPI.createWorkbook(snapshot);
                 loadedFromSnapshot = true;
             }
@@ -448,7 +454,11 @@ export default function Template({ snapshot }: { snapshot?: any }) {
             }
             disposable?.dispose();
             univerAPIRef.current = null;
-            window.setTimeout(() => univer.dispose(), 0);
+            try {
+                univer.dispose();
+            } catch (error) {
+                console.error('Gagal dispose Univer', error);
+            }
         };
     }, []);
 

@@ -35,13 +35,9 @@ export function Breadcrumbs({
                                             </BreadcrumbPage>
                                         ) : (
                                             <BreadcrumbLink asChild>
-                                                {href.startsWith('/paten-registration') ? (
-                                                    <a href={href}>{item.title}</a>
-                                                ) : (
-                                                    <Link href={item.href}>
-                                                        {item.title}
-                                                    </Link>
-                                                )}
+                                                <Link href={item.href}>
+                                                    {item.title}
+                                                </Link>
                                             </BreadcrumbLink>
                                         )}
                                     </BreadcrumbItem>

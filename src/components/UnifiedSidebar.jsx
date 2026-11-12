@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, router, usePage } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 import {
   ChevronDown,
   ChevronRight,
@@ -18,8 +18,8 @@ const SURAT_CHILDREN = [
 ];
 
 const PATEN_CHILDREN = [
-  { to: "/paten-registration/editor", label: "Editor", fullPage: true },
-  { to: "/paten-registration/template", label: "Template", fullPage: true },
+  { to: "/paten-registration/editor", label: "Editor" },
+  { to: "/paten-registration/template", label: "Template" },
 ];
 
 function itemClass(pathname, to, exact = false) {
@@ -45,15 +45,9 @@ function NavGroup({ label, pathname, items, initiallyOpen }) {
           <div className="nav-sub__line" />
           <div className="nav-sub__items">
             {items.map((item) => (
-              item.fullPage ? (
-                <a key={item.to} href={item.to} className={itemClass(pathname, item.to)}>
-                  {item.label}
-                </a>
-              ) : (
-                <Link key={item.to} href={item.to} className={itemClass(pathname, item.to)}>
-                  {item.label}
-                </Link>
-              )
+              <Link key={item.to} href={item.to} className={itemClass(pathname, item.to)}>
+                {item.label}
+              </Link>
             ))}
           </div>
         </div>
@@ -78,7 +72,9 @@ export default function UnifiedSidebar({ currentPath }) {
 
   async function handleLogout() {
     await logout();
-    router.visit("/login", { replace: true });
+    // Gunakan full reload agar state Inertia/Auth bersih dan halaman login
+    // benar-benar dirender (menghindari blank putih pada role admin).
+    window.location.replace("/login");
   }
 
   useEffect(() => {
