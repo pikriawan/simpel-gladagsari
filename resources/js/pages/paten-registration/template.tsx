@@ -249,6 +249,116 @@ export default function Template({ snapshot }: { snapshot?: any }) {
     useEffect(() => {
         if (!containerRef.current) return;
 
+        const bodyChildrenBefore = new Set(document.body.children);
+        let floatingPortalContainer: HTMLDivElement | null = null;
+        let portalSyncFrame = 0;
+        const fullscreenPopupPortals = new Set<HTMLElement>();
+        const movePopupPortal = (portal: HTMLElement, fullscreenElement: Element) => {
+            if (
+                portal === floatingPortalContainer ||
+                portal.contains(containerRef.current) ||
+                (!portal.matches('[data-radix-popper-content-wrapper]') &&
+                    !portal.querySelector('[data-radix-popper-content-wrapper]'))
+            ) {
+                return;
+            }
+
+            fullscreenPopupPortals.add(portal);
+            fullscreenElement.appendChild(portal);
+        };
+        const getBodyPortal = (node: Node) => {
+            let element = node instanceof HTMLElement ? node : node.parentElement;
+            while (element && element.parentElement !== document.body) {
+                element = element.parentElement;
+            }
+            return element?.parentElement === document.body ? element : null;
+        };
+        const captureFloatingPortalContainer = (node: Node) => {
+            const portal = getBodyPortal(node);
+            if (
+                portal instanceof HTMLDivElement &&
+                bodyChildrenBefore.has(portal) === false &&
+                portal.hasAttribute('dir') &&
+                !portal.id &&
+                !portal.className &&
+                !portal.matches('[data-radix-popper-content-wrapper]')
+            ) {
+                floatingPortalContainer = portal;
+            }
+        };
+        const bodyObserver = new MutationObserver((records) => {
+            for (const record of records) {
+                if (record.type === 'attributes' && record.attributeName === 'dir') {
+                    captureFloatingPortalContainer(record.target);
+                }
+
+                for (const node of record.addedNodes) {
+                    captureFloatingPortalContainer(node);
+
+                    const fullscreenElement = document.fullscreenElement;
+                    if (
+                        fullscreenElement?.contains(containerRef.current)
+                    ) {
+                        const portal = getBodyPortal(node);
+                        if (portal) movePopupPortal(portal, fullscreenElement);
+                    }
+                }
+            }
+
+            if (
+                document.fullscreenElement?.contains(containerRef.current) &&
+                !portalSyncFrame
+            ) {
+                portalSyncFrame = window.requestAnimationFrame(() => {
+                    portalSyncFrame = 0;
+                    const fullscreenElement = document.fullscreenElement;
+                    if (!fullscreenElement?.contains(containerRef.current)) return;
+
+                    for (const node of Array.from(document.body.children)) {
+                        if (node instanceof HTMLElement) {
+                            movePopupPortal(node, fullscreenElement);
+                        }
+                    }
+                });
+            }
+        });
+        bodyObserver.observe(document.body, {
+            attributes: true,
+            attributeFilter: ['dir'],
+            childList: true,
+            subtree: true,
+        });
+
+        const syncFullscreenPortal = () => {
+            const fullscreenElement = document.fullscreenElement;
+            if (fullscreenElement?.contains(containerRef.current)) {
+                if (floatingPortalContainer) {
+                    fullscreenElement.appendChild(floatingPortalContainer);
+                }
+
+                for (const node of Array.from(document.body.children)) {
+                    if (node instanceof HTMLElement) {
+                        movePopupPortal(node, fullscreenElement);
+                    }
+                }
+            } else {
+                if (
+                    floatingPortalContainer &&
+                    floatingPortalContainer.parentElement !== document.body
+                ) {
+                    document.body.appendChild(floatingPortalContainer);
+                }
+
+                for (const portal of fullscreenPopupPortals) {
+                    if (portal.isConnected && portal.parentElement !== document.body) {
+                        document.body.appendChild(portal);
+                    }
+                }
+                fullscreenPopupPortals.clear();
+            }
+        };
+        document.addEventListener('fullscreenchange', syncFullscreenPortal);
+
         const univer = new Univer({
             locale: LocaleType.EN_US,
             locales: {
@@ -318,6 +428,21 @@ export default function Template({ snapshot }: { snapshot?: any }) {
         );
 
         return () => {
+            document.removeEventListener('fullscreenchange', syncFullscreenPortal);
+            bodyObserver.disconnect();
+            if (portalSyncFrame) window.cancelAnimationFrame(portalSyncFrame);
+            if (
+                floatingPortalContainer &&
+                floatingPortalContainer.parentElement !== document.body
+            ) {
+                document.body.appendChild(floatingPortalContainer);
+            }
+            for (const portal of fullscreenPopupPortals) {
+                if (portal.isConnected && portal.parentElement !== document.body) {
+                    document.body.appendChild(portal);
+                }
+            }
+            fullscreenPopupPortals.clear();
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
