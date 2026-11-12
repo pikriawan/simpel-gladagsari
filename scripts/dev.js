@@ -2,10 +2,14 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-const node = process.execPath;
+const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 const children = [
-  spawn(node, ["server/index.js"], { cwd: root, stdio: "inherit", env: process.env }),
-  spawn(node, ["node_modules/vite/bin/vite.js"], { cwd: root, stdio: "inherit", env: process.env }),
+  spawn(process.env.PHP_BINARY || "php", ["artisan", "serve", "--host=127.0.0.1", "--port=8000"], {
+    cwd: root, stdio: "inherit", env: process.env,
+  }),
+  spawn(npm, ["run", "dev:client"], {
+    cwd: root, stdio: "inherit", env: process.env, shell: process.platform === "win32",
+  }),
 ];
 
 let stopping = false;

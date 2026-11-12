@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
       })
       .catch((error) => {
         setSessionToken(null);
-        if (error.message !== "Silakan login kembali." && error.message !== "Sesi tidak berlaku.") {
+        if (error.status !== 401 && error.message !== "Silakan login kembali." && error.message !== "Sesi tidak berlaku.") {
           console.error("Gagal memulihkan sesi:", error);
         }
       })
@@ -67,8 +67,7 @@ export function AuthProvider({ children }) {
     try {
       const result = await request("/auth/verify", {
         method: "POST",
-        body: { code },
-        token: pendingToken,
+        body: { code, pendingToken },
       });
       setSessionToken(result.token);
       setPendingToken(null);

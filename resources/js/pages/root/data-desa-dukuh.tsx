@@ -1,0 +1,1 @@
+export { default } from '../../../../src/pages/pelayanan/DataDesaDukuh.jsx';

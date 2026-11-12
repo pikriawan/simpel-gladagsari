@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@inertiajs/react";
 import AuthLayout from "../../components/AuthLayout.jsx";
 import { TextField } from "../../components/ui.jsx";
 import { request } from "../../lib/api.js";
@@ -32,7 +32,7 @@ export default function ForgotPassword() {
         {error && <p className="error-text" role="alert">{error}</p>}
         <button className="btn btn--block" type="submit">Kirim tautan reset password</button>
       </form>
-      <Link className="auth__back" to="/login">Kembali ke halaman login</Link>
+      <Link className="auth__back" href="/login">Kembali ke halaman login</Link>
     </AuthLayout>
   );
 }

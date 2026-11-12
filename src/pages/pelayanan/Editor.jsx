@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { router } from "@inertiajs/react";
 import { Printer } from "lucide-react";
 import { DateField, PageHead, SelectField, TextField, Field } from "../../components/ui.jsx";
 import LetterPreview from "../../components/LetterPreview.jsx";
@@ -19,7 +19,6 @@ export const EMPTY_FORM = {
 
 export default function Editor() {
   const { draft, setDraft, template, dukuhByDesa, addRiwayat } = useData();
-  const navigate = useNavigate();
   const [form, setForm] = useState(() => ({ ...EMPTY_FORM, ...(draft || {}) }));
   const [error, setError] = useState("");
   const panelSwitch = usePanelSwitch();
@@ -47,7 +46,7 @@ export default function Editor() {
       return;
     }
     window.print();
-    navigate("/surat-dispensasi-nikah/riwayat");
+    router.visit("/surat-dispensasi-nikah/riwayat");
   }
 
   return (

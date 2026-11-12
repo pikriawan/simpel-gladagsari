@@ -1,10 +1,10 @@
-import { Link } from "react-router-dom";
+import { Link } from "@inertiajs/react";
 
 export default function AuthLayout({ title, subtitle, children, success }) {
   return (
     <main className="auth">
       <section className="auth__panel">
-        <Link className="auth__brand" to="/login">Simpel</Link>
+        <Link className="auth__brand" href="/login">Simpel</Link>
         <div className="auth__content">
           <header className="auth__header">
             <h1 className="t-title">{title}</h1>

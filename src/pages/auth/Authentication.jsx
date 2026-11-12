@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { router } from "@inertiajs/react";
 import AuthLayout from "../../components/AuthLayout.jsx";
 import { homeFor, useAuth } from "../../context/AuthContext.jsx";
 
@@ -7,13 +7,16 @@ const LEN = 6;
 
 export default function Authentication() {
   const { pending, user, verifyCode, completeWithoutCode } = useAuth();
-  const navigate = useNavigate();
   const [digits, setDigits] = useState(Array(LEN).fill(""));
   const [error, setError] = useState("");
   const refs = useRef([]);
 
-  if (user) return <Navigate to={homeFor(user)} replace />;
-  if (!pending) return <Navigate to="/login" replace />;
+  useEffect(() => {
+    if (user) router.visit(homeFor(user), { replace: true });
+    else if (!pending) router.visit("/login", { replace: true });
+  }, [user, pending]);
+
+  if (user || !pending) return null;
 
   const setAt = (i, v) => setDigits((d) => d.map((x, idx) => (idx === i ? v : x)));
 
@@ -36,11 +39,11 @@ export default function Authentication() {
   async function submit() {
     if (!pending.authenticator) {
       completeWithoutCode();
-      return navigate(homeFor(pending), { replace: true });
+      return router.visit(homeFor(pending), { replace: true });
     }
     const res = await verifyCode(digits.join(""));
     if (!res.ok) return setError(res.error);
-    navigate(homeFor(pending), { replace: true });
+    router.visit(homeFor(pending), { replace: true });
   }
 
   return (

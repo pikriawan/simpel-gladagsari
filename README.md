@@ -1,30 +1,46 @@
-# Simpel (React + Vite)
+# Simpel
 
-Implementasi desain Figma "Simpel" (login, autentikasi, lupa/reset password, layar Pelayanan, dan layar Administrator).
+Project utama menggunakan Laravel dan Inertia sebagai satu router/aplikasi. Backend, autentikasi Fortify, dan database Laravel berada di root. Halaman React utama tetap memakai komponen dari `src/`, yang dipasang sebagai page Inertia. Registrasi PATEN tetap memakai page React/Inertia dan controller Laravel teman.
 
-## Menjalankan
-Persyaratan: Node.js 24 atau lebih baru (SQLite memakai modul bawaan Node.js).
+## Persyaratan
 
-Jalankan API dan frontend sekaligus dengan satu perintah:
-```bash
+- PHP 8.3 atau lebih baru dengan ekstensi PDO SQLite
+- Composer
+- Node.js 24 atau lebih baru
+
+## Menjalankan di Windows
+
+```powershell
+Copy-Item .env.example .env
+composer install
+php artisan key:generate
+php artisan migrate --seed
+npm install
 npm run dev
 ```
-Perintah ini menjalankan Vite dan API bersama-sama. Frontend tersedia di `http://localhost:5173`; Vite meneruskan `/api` ke server pada port `3001`. Database dibuat otomatis di `data/simpel.sqlite`; atur `DATABASE_PATH` atau `PORT` untuk mengganti lokasi/port.
-`npm run build` hanya membuat bundle frontend untuk deployment, bukan menjalankan server. Saat hosting, jalankan API dengan penyimpanan disk persisten dan arahkan `/api` pada domain yang sama ke port API. SQLite cocok untuk satu instance aplikasi; gunakan database server seperti PostgreSQL jika nanti perlu beberapa instance/replica.
 
-## Aset yang perlu Anda taruh sendiri
-- `public/assets/login-building.png` — ekspor layer **Rectangle 1** (node `6:18`) dari Figma.
+Jika `.env` sudah tersedia, jangan salin ulang. `npm run dev` menjalankan Laravel pada port 8000 dan Vite pada port 5173 untuk aset; keduanya melayani satu aplikasi. Buka aplikasi di `http://localhost:8000`. Database SQLite lokal berada di `database/database.sqlite`.
 
-## Akun demo (disimpan di SQLite)
+## Akun awal
+
+Seeder menyediakan akun berikut. Ganti password sebelum penggunaan nyata.
+
 | Role | NIP | Password |
 |---|---|---|
-| Pelayanan | 098765432123456787 | password123 |
-| Administrator | 098765432123456788 | password123 |
+| Pelayanan | 098765432123456787 | password |
+| Administrator | 098765432123456788 | password |
 
-Kode autentikasi: **6 digit angka apa pun** diterima untuk demo. Verifikasi TOTP sungguhan dan email reset password belum terintegrasi, sehingga aplikasi ini belum siap digunakan untuk autentikasi produksi tanpa layanan tersebut.
+Email verifikasi dan reset password memakai Gmail SMTP. Isi `MAIL_USERNAME` dengan alamat Gmail dan `MAIL_PASSWORD` dengan Google App Password di `.env` lokal; jangan gunakan password akun Gmail biasa. `MAIL_FROM_ADDRESS` harus sama dengan `MAIL_USERNAME`. App Password hanya dipakai di `.env`, jangan commit atau kirim melalui chat.
 
-## Catatan
-- Ikon memakai `lucide-react` sebagai pengganti; ganti dengan SVG ekspor Figma jika ingin identik piksel.
-- "Ekspor/Impor Excel" memakai CSV (bisa dibuka di Excel).
-- Data aplikasi tersimpan di SQLite melalui API Node.js (`server/index.js`); password disimpan dalam bentuk hash scrypt dan sesi disimpan sebagai hash token.
-- Layar MacBook Air 16, 17, 18 belum terbaca dari Figma (batas panggilan MCP); pada Pegawai.jsx modal Ubah, Hapus, dan QR dibuat berdasarkan inferensi.
+## Build dan tes
+
+```powershell
+npm run build
+php artisan test
+```
+
+Build menghasilkan aset Laravel/Inertia di `public/build`. Untuk deployment, sajikan direktori `public/` Laravel dan gunakan database persisten. `Backend from github/` hanya salinan sumber lokal yang diabaikan Git; kode backend yang aktif berada di root.
+
+## Aset
+
+Tambahkan `public/assets/login-building.png` dari ekspor layer **Rectangle 1** Figma untuk gambar halaman login.

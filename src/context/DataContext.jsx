@@ -65,7 +65,7 @@ export const DEFAULT_TEMPLATE = {
   baris3: "Jl. Boyolali – Semarang KM 10 Gladagsari Boyolali Telp. (0276) 331345",
   baris4: "website: gladagsarikec.boyolali.go.id, email: gladagsari@boyolali.go.id",
   baris5: "",
-  logo: "",
+  logo: "/assets/Logo%20KOP.png",
   namaPejabat: "Gilang Pamungkas",
   jabatanUtama: "a.n. BUPATI BOYOLALI",
   subJabatan: "Kasi Pelayanan",
@@ -149,11 +149,24 @@ export function DataProvider({ children }) {
     });
   }, []);
 
-  const setRiwayat = useMemo(() => persist("riwayat", riwayatRef, setRiwayatState), [persist]);
   const setDesa = useMemo(() => persist("desa", desaRef, setDesaState), [persist]);
   const setDukuhByDesa = useMemo(() => persist("dukuhByDesa", dukuhRef, setDukuhByDesaState), [persist]);
   const setTemplate = useMemo(() => persist("template", templateRef, setTemplateState), [persist]);
-  const setPegawai = useMemo(() => persist("pegawai", pegawaiRef, setPegawaiState), [persist]);
+  const setPegawai = useCallback((next) => {
+    const value = typeof next === "function" ? next(pegawaiRef.current) : next;
+    pegawaiRef.current = value;
+    setPegawaiState(value);
+    saveData("pegawai", value).then(({ pegawai: saved }) => {
+      if (saved) {
+        pegawaiRef.current = saved;
+        setPegawaiState(saved);
+      }
+      setDataError("");
+    }).catch((error) => {
+      console.error("Gagal menyimpan pegawai:", error);
+      setDataError(`Gagal menyimpan data (pegawai): ${error.message}`);
+    });
+  }, []);
   const setDraft = useMemo(() => persist("draft", draftRef, setDraftState), [persist]);
   const setSheets = useMemo(() => persist("sheets", sheetsRef, setSheetsState), [persist]);
   const setPatenTemplate = useMemo(() => persist("patenTemplate", patenTemplateRef, setPatenTemplateState), [persist]);
@@ -176,20 +189,27 @@ export function DataProvider({ children }) {
   }, []);
 
   const addRiwayat = useCallback((rec) => {
-    const next = [rec, ...riwayatRef.current];
-    riwayatRef.current = next;
-    setRiwayatState(next);
-    return saveData("riwayat", next).catch((error) => {
+    return request("/data/riwayat", { method: "POST", body: rec }).then(({ record }) => {
+      const next = [record, ...riwayatRef.current];
+      riwayatRef.current = next;
+      setRiwayatState(next);
+      return record;
+    }).catch((error) => {
       console.error("Gagal menyimpan riwayat:", error);
       setDataError(`Gagal menyimpan riwayat: ${error.message}`);
       throw error;
     });
   }, []);
-  const removeRiwayat = useCallback((id) => setRiwayat((l) => l.filter((r) => r.id !== id)), [setRiwayat]);
+  const removeRiwayat = useCallback(async (id) => {
+    await request(`/data/riwayat/${encodeURIComponent(id)}`, { method: "DELETE" });
+    const next = riwayatRef.current.filter((record) => record.id !== id);
+    riwayatRef.current = next;
+    setRiwayatState(next);
+  }, []);
 
   const value = useMemo(
     () => ({
-      riwayat, setRiwayat, addRiwayat, removeRiwayat,
+      riwayat, addRiwayat, removeRiwayat,
       desa, setDesa, dukuhByDesa, setDukuhByDesa,
       template, setTemplate,
       pegawai, setPegawai,
@@ -204,7 +224,7 @@ export function DataProvider({ children }) {
       resetTemplate: () => setTemplate(DEFAULT_TEMPLATE),
     }),
     [riwayat, desa, dukuhByDesa, template, pegawai, draft, sheets, patenTemplate, addRiwayat, removeRiwayat,
-      setRiwayat, setDesa, setDukuhByDesa, setTemplate, setPegawai, setDraft, setSheets, setPatenTemplate, refreshData, dataError]
+      setDesa, setDukuhByDesa, setTemplate, setPegawai, setDraft, setSheets, setPatenTemplate, refreshData, dataError]
   );
 
   return (

@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { router } from "@inertiajs/react";
 import AuthLayout from "../../components/AuthLayout.jsx";
 import { PasswordField, TextField } from "../../components/ui.jsx";
 import { request } from "../../lib/api.js";
 
 export default function ResetPassword() {
-  const [params] = useSearchParams();
-  const navigate = useNavigate();
-  const email = params.get("email") || "example@mail.com";
+  const url = new URL(window.location.href);
+  const routeToken = url.pathname.split("/").filter(Boolean).at(-1);
+  const email = url.searchParams.get("email") || "example@mail.com";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -19,10 +19,10 @@ export default function ResetPassword() {
     try {
       await request("/auth/reset-password", {
         method: "POST",
-        body: { email, token: params.get("token"), password },
+        body: { email, token: url.searchParams.get("token") || routeToken, password },
         token: null,
       });
-      navigate("/login");
+      router.visit("/login", { replace: true });
     } catch (requestError) {
       setError(requestError.message);
     }

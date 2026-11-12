@@ -4,6 +4,7 @@ import { CircleCheck, Plus, QrCode, RotateCcw, Shield, SquarePen, Trash2, Triang
 import { Modal, PageHead, PasswordField, SelectField, TextField } from "../../components/ui.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { request } from "../../lib/api.js";
 
 const ROLES = ["Pelayanan", "Administrator"];
 const EMPTY = { nip: "", nama: "", email: "", role: "" };
@@ -39,15 +40,46 @@ function SecurityModal({ p, onClose, onUpdate }) {
   const [tab, setTab] = useState("password");
   const [pw, setPw] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [code, setCode] = useState("");
   const [error, setError] = useState("");
-  const [qr, setQr] = useState(false);
-  const uri = `otpauth://totp/Simpel:${encodeURIComponent(p.nip)}?secret=${btoa(p.id + p.nip).replace(/=/g, "").toUpperCase().slice(0, 16)}&issuer=Simpel`;
+  const [qr, setQr] = useState(null);
 
   function savePassword() {
     if (pw.length < 8) return setError("Password minimal 8 karakter.");
     if (pw !== confirm) return setError("Konfirmasi password tidak sama.");
     onUpdate({ password: pw, passwordSet: true });
     onClose();
+  }
+
+  async function generateQr() {
+    setError("");
+    try {
+      setQr(await request(`/users/${p.id}/two-factor`, { method: "POST" }));
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
+  async function confirmAuthenticator() {
+    setError("");
+    try {
+      await request(`/users/${p.id}/two-factor/confirm`, { method: "POST", body: { code } });
+      onUpdate({ authenticator: true });
+      onClose();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
+  async function disableAuthenticator() {
+    setError("");
+    try {
+      await request(`/users/${p.id}/two-factor`, { method: "DELETE" });
+      onUpdate({ authenticator: false });
+      onClose();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   }
 
   return (
@@ -79,16 +111,20 @@ function SecurityModal({ p, onClose, onUpdate }) {
         <>
           {qr && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-              <QRCodeSVG value={uri} size={176} />
+              <QRCodeSVG value={qr.url} size={176} />
               <p className="t-muted" style={{ fontSize: 14, textAlign: "center" }}>Pindai dengan aplikasi autentikator, lalu aktifkan.</p>
+              <TextField label="Kode autentikasi" value={code} onChange={(event) => setCode(event.target.value)} inputMode="numeric" />
             </div>
           )}
+          {error && <p className="error-text" role="alert">{error}</p>}
           <div className="modal__actions">
             <button className="btn btn--grey" onClick={onClose}>Batal</button>
-            {qr ? (
-              <button className="btn" onClick={() => { onUpdate({ authenticator: true }); onClose(); }}><CircleCheck size={16} />Aktifkan authenticator</button>
+            {p.authenticator ? (
+              <button className="btn btn--danger" onClick={disableAuthenticator}><CircleCheck size={16} />Nonaktifkan authenticator</button>
+            ) : qr ? (
+              <button className="btn" onClick={confirmAuthenticator}><CircleCheck size={16} />Konfirmasi kode</button>
             ) : (
-              <button className="btn" onClick={() => setQr(true)}><QrCode size={16} />Generate QR code authenticator</button>
+              <button className="btn" onClick={generateQr}><QrCode size={16} />Generate QR code authenticator</button>
             )}
           </div>
         </>

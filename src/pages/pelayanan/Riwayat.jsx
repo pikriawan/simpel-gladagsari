@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { router } from "@inertiajs/react";
 import { Download, Eye, FileSpreadsheet, Trash2, Upload } from "lucide-react";
 import { DateField, Modal, PageHead, Pager, TextField } from "../../components/ui.jsx";
 import { useData } from "../../context/DataContext.jsx";
@@ -52,7 +52,6 @@ function Detail({ r, onClose, onDelete, onLoad }) {
 
 export default function Riwayat() {
   const { riwayat, removeRiwayat, setDraft } = useData();
-  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -147,7 +146,7 @@ export default function Riwayat() {
           onLoad={() => {
             const { id, nomorSurat, savedAt, ...form } = detail;
             setDraft(form);
-            navigate("/surat-dispensasi-nikah/editor");
+            router.visit("/surat-dispensasi-nikah/editor");
           }}
         />
       )}
