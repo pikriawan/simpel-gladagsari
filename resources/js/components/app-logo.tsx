@@ -6,6 +6,6 @@ export default function AppLogo() {
     const { name } = usePage().props;
 
     return (
-        <h1 className="font-medium text-2xl">{name}</h1>
+        <h1 className="font-medium text-lg tracking-tight">{name}</h1>
     );
 }
