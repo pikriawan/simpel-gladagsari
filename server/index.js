@@ -1,5 +1,6 @@
 import { createServer } from "node:http";
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { deflateRawSync } from "node:zlib";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,12 +36,274 @@ db.exec(`
   );
 `);
 
+const CRC_TABLE = new Uint32Array(256);
+for (let i = 0; i < 256; i++) {
+  let c = i;
+  for (let k = 0; k < 8; k++) {
+    c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+  }
+  CRC_TABLE[i] = c;
+}
+
+function crc32(buf) {
+  let crc = 0 ^ (-1);
+  for (let i = 0; i < buf.length; i++) {
+    crc = (crc >>> 8) ^ CRC_TABLE[(crc ^ buf[i]) & 0xFF];
+  }
+  return (crc ^ (-1)) >>> 0;
+}
+
+function generateXlsxBuffer(sheets) {
+  const enc = new TextEncoder();
+  const fileRecords = [];
+  let offset = 0;
+  const chunks = [];
+
+  function escapeXml(str) {
+    return String(str ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
+  }
+
+  function colToLetter(colIndex) {
+    let temp = null;
+    let letter = "";
+    let col = colIndex + 1;
+    while (col > 0) {
+      temp = (col - 1) % 26;
+      letter = String.fromCharCode(65 + temp) + letter;
+      col = Math.floor((col - temp - 1) / 26);
+    }
+    return letter;
+  }
+
+  const contentTypes = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+    '<Default Extension="xml" ContentType="application/xml"/>',
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>',
+  ];
+
+  const rels = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>',
+    '</Relationships>',
+  ].join("");
+
+  const wbRels = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
+  ];
+
+  const wbSheets = [];
+  const files = [
+    { name: "_rels/.rels", data: rels },
+  ];
+
+  (sheets || []).forEach((sheet, idx) => {
+    const sheetId = idx + 1;
+    const rId = `rId${sheetId}`;
+    contentTypes.push(`<Override PartName="/xl/worksheets/sheet${sheetId}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`);
+    wbRels.push(`<Relationship Id="${rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${sheetId}.xml"/>`);
+    wbSheets.push(`<sheet name="${escapeXml(sheet.name || `Sheet${sheetId}`)}" sheetId="${sheetId}" r:id="${rId}"/>`);
+
+    const sheetXml = [
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+      '<sheetData>',
+    ];
+
+    (sheet.cells || []).forEach((row, r) => {
+      let rowHasData = false;
+      const rowXml = [];
+      row.forEach((cellVal, c) => {
+        if (cellVal !== undefined && cellVal !== null && cellVal !== "") {
+          rowHasData = true;
+          const cellRef = colToLetter(c) + (r + 1);
+          const isNum = typeof cellVal === "number" || (!isNaN(cellVal) && !isNaN(parseFloat(cellVal)) && !String(cellVal).startsWith("0"));
+          if (isNum && !String(cellVal).includes("/") && !String(cellVal).includes("-")) {
+            rowXml.push(`<c r="${cellRef}"><v>${cellVal}</v></c>`);
+          } else {
+            rowXml.push(`<c r="${cellRef}" t="inlineStr"><is><t>${escapeXml(cellVal)}</t></is></c>`);
+          }
+        }
+      });
+      if (rowHasData) {
+        sheetXml.push(`<row r="${r + 1}">${rowXml.join("")}</row>`);
+      }
+    });
+
+    sheetXml.push("</sheetData></worksheet>");
+    files.push({ name: `xl/worksheets/sheet${sheetId}.xml`, data: sheetXml.join("") });
+  });
+
+  contentTypes.push("</Types>");
+  wbRels.push("</Relationships>");
+
+  const workbookXml = [
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">',
+    '<sheets>',
+    wbSheets.join(""),
+    '</sheets>',
+    '</workbook>',
+  ].join("");
+
+  files.push({ name: "[Content_Types].xml", data: contentTypes.join("") });
+  files.push({ name: "xl/workbook.xml", data: workbookXml });
+  files.push({ name: "xl/_rels/workbook.xml.rels", data: wbRels.join("") });
+
+  for (const file of files) {
+    const nameBuf = Buffer.from(file.name, "utf8");
+    const dataBuf = Buffer.isBuffer(file.data) ? file.data : Buffer.from(file.data, "utf8");
+    const uncompressedSize = dataBuf.length;
+    const deflated = deflateRawSync(dataBuf);
+    const compressedSize = deflated.length;
+    const crc = crc32(dataBuf);
+
+    const localHeader = Buffer.alloc(30 + nameBuf.length);
+    localHeader.writeUInt32LE(0x04034b50, 0);
+    localHeader.writeUInt16LE(20, 4);
+    localHeader.writeUInt16LE(0, 6);
+    localHeader.writeUInt16LE(8, 8);
+    localHeader.writeUInt16LE(0, 10);
+    localHeader.writeUInt16LE(0, 12);
+    localHeader.writeUInt32LE(crc, 14);
+    localHeader.writeUInt32LE(compressedSize, 18);
+    localHeader.writeUInt32LE(uncompressedSize, 22);
+    localHeader.writeUInt16LE(nameBuf.length, 26);
+    localHeader.writeUInt16LE(0, 28);
+    nameBuf.copy(localHeader, 30);
+
+    chunks.push(localHeader, deflated);
+    fileRecords.push({ nameBuf, crc, compressedSize, uncompressedSize, offset });
+    offset += localHeader.length + deflated.length;
+  }
+
+  const centralDirStart = offset;
+  for (const r of fileRecords) {
+    const cdHeader = Buffer.alloc(46 + r.nameBuf.length);
+    cdHeader.writeUInt32LE(0x02014b50, 0);
+    cdHeader.writeUInt16LE(20, 4);
+    cdHeader.writeUInt16LE(20, 6);
+    cdHeader.writeUInt16LE(0, 8);
+    cdHeader.writeUInt16LE(8, 10);
+    cdHeader.writeUInt16LE(0, 12);
+    cdHeader.writeUInt16LE(0, 14);
+    cdHeader.writeUInt32LE(r.crc, 16);
+    cdHeader.writeUInt32LE(r.compressedSize, 20);
+    cdHeader.writeUInt32LE(r.uncompressedSize, 24);
+    cdHeader.writeUInt16LE(r.nameBuf.length, 28);
+    cdHeader.writeUInt16LE(0, 30);
+    cdHeader.writeUInt16LE(0, 32);
+    cdHeader.writeUInt16LE(0, 34);
+    cdHeader.writeUInt16LE(0, 36);
+    cdHeader.writeUInt32LE(0, 38);
+    cdHeader.writeUInt32LE(r.offset, 42);
+    r.nameBuf.copy(cdHeader, 46);
+    chunks.push(cdHeader);
+    offset += cdHeader.length;
+  }
+  const centralDirSize = offset - centralDirStart;
+
+  const eocd = Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50, 0);
+  eocd.writeUInt16LE(0, 4);
+  eocd.writeUInt16LE(0, 6);
+  eocd.writeUInt16LE(fileRecords.length, 8);
+  eocd.writeUInt16LE(fileRecords.length, 10);
+  eocd.writeUInt32LE(centralDirSize, 12);
+  eocd.writeUInt32LE(centralDirStart, 16);
+  eocd.writeUInt16LE(0, 20);
+  chunks.push(eocd);
+
+  return Buffer.concat(chunks);
+}
+
+const DEFAULT_DESA = [
+  "Candisari", "Gladagsari", "Jlarem", "Kaligentong", "Kembang",
+  "Ngadirojo", "Ngagrong", "Ngargoloka", "Sampetan", "Seboto",
+];
+
+const DEFAULT_DUKUH_BY_DESA = {
+  Candisari: [
+    "Banjaran", "Candilaras", "Candirejo", "Cuken", "Kembangkuning", "Kumpulrejo",
+    "Ledoksari", "Ngelo", "Sokorejo", "Sorengan", "Tugusari", "Wonosari",
+  ],
+  Gladagsari: [
+    "Gentansari", "Kupo", "Mitiran", "Mrawun", "Ngablak", "Pengulon", "Tempel",
+  ],
+  Jlarem: [
+    "Jlarem", "Ngaglik", "Grogolan", "Mongkrong", "Gemawang", "Tegalrejo",
+    "Sugihwaras", "Sukodono", "Kumpulrejo", "Semirat", "Dora", "Gondang Kulon",
+    "Gondang Sari", "Soka", "Jetis", "Ngablak A", "Ngablak B", "Kebondowo", "Sidorejo",
+  ],
+  Kaligentong: [
+    "Bener", "Bener Wetan", "Prandelan", "Prampelan", "Tegalsari", "Ngaduman",
+    "Karangsari", "Kalisari", "Banjarsari", "Prigen", "Kalipuyang", "Bendosari", "Ngelo",
+  ],
+  Kembang: [
+    "Babadan", "Dali", "Gatak", "Karangduwet", "Kepoh", "Klangon", "Klatak",
+    "Margosari", "Ngemplak", "Sewengi", "Tegalrejo", "Tegalsari", "Tegalwaton",
+    "Tempel", "Wates", "Kembang", "Sidodadi", "Purosari", "Mulyosari", "Kembangsari",
+  ],
+  Ngadirojo: [
+    "Bodrosari", "Dedegan", "Diwak", "Dukuhrejo", "Gondanglegi", "Jati Kulon",
+    "Jati Wetan", "Kadang", "Karang", "Kedung", "Kembang", "Magak", "Margodadi",
+    "Margokaton", "Margomulyo", "Margorejo", "Margosari", "Margosuci", "Melambong",
+    "Ngadirojo", "Pentur", "Rejosari", "Rejoso", "Tegalsari", "Tomo",
+  ],
+  Ngagrong: [
+    "Dukuh", "Gondangsari", "Gunungsari", "Kajongan", "Kalipuyang", "Karangtalun",
+    "Lengkong", "Ngaglik", "Ngagrong", "Ngargosari", "Ngegrek", "Pulerejo",
+    "Sidomulyo", "Sikepan", "Surodadi", "Tegalrejo", "Tompak", "Tonolayu",
+  ],
+  Ngargoloka: [
+    "Gawok", "Glagah", "Kwaron", "Losari", "Malibari", "Ngargoloka", "Pesan", "Tanen",
+  ],
+  Sampetan: [
+    "Bumirejo", "Cemorosewu", "Ganduman", "Gumuk", "Karangboyo", "Kendal",
+    "Kropak Kulon", "Kropak Wetan", "Mungsari", "Pereng Kulon", "Purwogondo",
+    "Purwosari", "Ringinsari Kulon", "Salamrejo", "Sampetan", "Selorejo",
+    "Sembung Kidul", "Sidorejo", "Sidorejo Wetan", "Sukorame", "Tanjungsari",
+    "Tarumulyo", "Tarumulyo Kulon", "Tempelsari",
+  ],
+  Seboto: [
+    "Bendo", "Cengklik", "Drajud", "Dungus", "Rejosari", "Seboto", "Selomiring",
+    "Sendang", "Tempel", "Wates",
+  ],
+};
+
+const SAMPLE_RIWAYAT = [
+  { id: "s-156", nomorUrut: "156", nomorSurat: "474.2/156/6.20/2026", namaPemohon: "Muhammad Rifqi", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Kaligentong", nomorSuratPengantar: "474/101/II/2026", tanggalSurat: "2026-10-15", dukuh: "Bener", rt: "001", rw: "001", tanggalNikah: "2026-10-16", namaPasangan: "Nem Painem", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Banjaran, RT001/RW001, Desa Candisari, Kec. Gladagsari", savedAt: "2026-10-16T12:34:00.000Z" },
+  { id: "s-157", nomorUrut: "157", nomorSurat: "474.2/157/6.20/2026", namaPemohon: "Arya Suparman", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Gladagsari", nomorSuratPengantar: "474/102/II/2026", tanggalSurat: "2026-10-15", dukuh: "Gentansari", rt: "002", rw: "001", tanggalNikah: "2026-10-17", namaPasangan: "Sumarni Ilham", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Gentansari, RT002/RW001, Desa Gladagsari, Kec. Gladagsari", savedAt: "2026-10-16T12:38:00.000Z" },
+  { id: "s-158", nomorUrut: "158", nomorSurat: "474.2/158/6.20/2026", namaPemohon: "Purnama Tirta", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Kaligentong", nomorSuratPengantar: "474/103/II/2026", tanggalSurat: "2026-11-20", dukuh: "Kalisari", rt: "001", rw: "002", tanggalNikah: "2026-11-21", namaPasangan: "Rahman Arya", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Kalisari, RT001/RW002, Desa Kaligentong, Kec. Gladagsari", savedAt: "2026-11-20T09:11:00.000Z" },
+  { id: "s-159", nomorUrut: "159", nomorSurat: "474.2/159/6.20/2026", namaPemohon: "Siti Aisyah", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Jlarem", nomorSuratPengantar: "474/104/II/2026", tanggalSurat: "2026-11-23", dukuh: "Mongkrong", rt: "003", rw: "001", tanggalNikah: "2026-11-24", namaPasangan: "Budi Santoso", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Mongkrong, RT003/RW001, Desa Jlarem, Kec. Gladagsari", savedAt: "2026-11-23T10:42:00.000Z" },
+  { id: "s-160", nomorUrut: "160", nomorSurat: "474.2/160/6.20/2026", namaPemohon: "Lestari Widyastuti", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Kembang", nomorSuratPengantar: "474/105/II/2026", tanggalSurat: "2026-11-27", dukuh: "Kepoh", rt: "001", rw: "001", tanggalNikah: "2026-11-28", namaPasangan: "Andi Pratama", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Kepoh, RT001/RW001, Desa Kembang, Kec. Gladagsari", savedAt: "2026-11-27T11:15:00.000Z" },
+  { id: "s-161", nomorUrut: "161", nomorSurat: "474.2/161/6.20/2026", namaPemohon: "Rina Maharani", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Ngadirojo", nomorSuratPengantar: "474/106/II/2026", tanggalSurat: "2026-11-30", dukuh: "Diwak", rt: "002", rw: "002", tanggalNikah: "2026-12-01", namaPasangan: "Dedi Saputra", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Diwak, RT002/RW002, Desa Ngadirojo, Kec. Gladagsari", savedAt: "2026-11-30T12:00:00.000Z" },
+  { id: "s-162", nomorUrut: "162", nomorSurat: "474.2/162/6.20/2026", namaPemohon: "Adi Nugroho", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Gladagsari", nomorSuratPengantar: "474/107/II/2026", tanggalSurat: "2026-12-04", dukuh: "Mitiran", rt: "001", rw: "001", tanggalNikah: "2026-12-05", namaPasangan: "Yuli Astuti", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Mitiran, RT001/RW001, Desa Gladagsari, Kec. Gladagsari", savedAt: "2026-12-04T13:28:00.000Z" },
+  { id: "s-163", nomorUrut: "163", nomorSurat: "474.2/163/6.20/2026", namaPemohon: "Dina Putri", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Kaligentong", nomorSuratPengantar: "474/108/II/2026", tanggalSurat: "2026-12-07", dukuh: "Ngaduman", rt: "003", rw: "001", tanggalNikah: "2026-12-08", namaPasangan: "Rudi Hartono", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Ngaduman, RT003/RW001, Desa Kaligentong, Kec. Gladagsari", savedAt: "2026-12-07T14:45:00.000Z" },
+  { id: "s-164", nomorUrut: "164", nomorSurat: "474.2/164/6.20/2026", namaPemohon: "Eka Sari", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Ngagrong", nomorSuratPengantar: "474/109/II/2026", tanggalSurat: "2026-12-11", dukuh: "Kajongan", rt: "001", rw: "001", tanggalNikah: "2026-12-12", namaPasangan: "Bagas Pradana", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Kajongan, RT001/RW001, Desa Ngagrong, Kec. Gladagsari", savedAt: "2026-12-11T15:10:00.000Z" },
+  { id: "s-165", nomorUrut: "165", nomorSurat: "474.2/165/6.20/2026", namaPemohon: "Fajar Ramadhan", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Seboto", nomorSuratPengantar: "474/110/II/2026", tanggalSurat: "2026-12-14", dukuh: "Bendo", rt: "002", rw: "001", tanggalNikah: "2026-12-15", namaPasangan: "Vina Lestari", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Bendo, RT002/RW001, Desa Seboto, Kec. Gladagsari", savedAt: "2026-12-14T16:33:00.000Z" },
+  { id: "s-166", nomorUrut: "166", nomorSurat: "474.2/166/6.20/2026", namaPemohon: "Rina Amelia", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Seboto", nomorSuratPengantar: "474/111/II/2026", tanggalSurat: "2026-12-17", dukuh: "Cengklik", rt: "001", rw: "002", tanggalNikah: "2026-12-18", namaPasangan: "Bambang Sutanto", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Cengklik, RT001/RW002, Desa Seboto, Kec. Gladagsari", savedAt: "2026-12-17T17:56:00.000Z" },
+  { id: "s-167", nomorUrut: "167", nomorSurat: "474.2/167/6.20/2026", namaPemohon: "Tono Setiawan", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Sampetan", nomorSuratPengantar: "474/112/II/2026", tanggalSurat: "2026-12-21", dukuh: "Bumirejo", rt: "001", rw: "001", tanggalNikah: "2026-12-22", namaPasangan: "Lili Sari", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Bumirejo, RT001/RW001, Desa Sampetan, Kec. Gladagsari", savedAt: "2026-12-21T18:19:00.000Z" },
+  { id: "s-168", nomorUrut: "168", nomorSurat: "474.2/168/6.20/2026", namaPemohon: "Dwi Cahyani", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Candisari", nomorSuratPengantar: "474/113/II/2026", tanggalSurat: "2026-12-24", dukuh: "Wonosari", rt: "004", rw: "002", tanggalNikah: "2026-12-25", namaPasangan: "Rizki Wijaya", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Wonosari, RT004/RW002, Desa Candisari, Kec. Gladagsari", savedAt: "2026-12-24T19:02:00.000Z" },
+  { id: "s-169", nomorUrut: "169", nomorSurat: "474.2/169/6.20/2026", namaPemohon: "Rendi Saputra", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Gladagsari", nomorSuratPengantar: "474/114/II/2026", tanggalSurat: "2026-12-25", dukuh: "Ngablak", rt: "001", rw: "001", tanggalNikah: "2026-12-26", namaPasangan: "Ayu Lestari", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Ngablak, RT001/RW001, Desa Gladagsari, Kec. Gladagsari", savedAt: "2026-12-25T19:45:00.000Z" },
+  { id: "s-170", nomorUrut: "170", nomorSurat: "474.2/170/6.20/2026", namaPemohon: "Sari Dewi", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Kaligentong", nomorSuratPengantar: "474/115/II/2026", tanggalSurat: "2026-12-26", dukuh: "Bendosari", rt: "002", rw: "001", tanggalNikah: "2026-12-27", namaPasangan: "Imam Sutanto", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Bendosari, RT002/RW001, Desa Kaligentong, Kec. Gladagsari", savedAt: "2026-12-26T20:12:00.000Z" },
+  { id: "s-171", nomorUrut: "171", nomorSurat: "474.2/171/6.20/2026", namaPemohon: "Budi Santoso", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Ngargoloka", nomorSuratPengantar: "474/116/II/2026", tanggalSurat: "2026-12-27", dukuh: "Gawok", rt: "001", rw: "001", tanggalNikah: "2026-12-28", namaPasangan: "Rina Amelia", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Gawok, RT001/RW001, Desa Ngargoloka, Kec. Gladagsari", savedAt: "2026-12-27T20:48:00.000Z" },
+  { id: "s-172", nomorUrut: "172", nomorSurat: "474.2/172/6.20/2026", namaPemohon: "Wahyu Santoso", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Kaligentong", nomorSuratPengantar: "474/117/II/2026", tanggalSurat: "2027-01-02", dukuh: "Banjarsari", rt: "001", rw: "001", tanggalNikah: "2027-01-03", namaPasangan: "Dewi Rahayu", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Banjarsari, RT001/RW001, Desa Kaligentong, Kec. Gladagsari", savedAt: "2027-01-02T08:15:00.000Z" },
+  { id: "s-173", nomorUrut: "173", nomorSurat: "474.2/173/6.20/2026", namaPemohon: "Hendra Kusuma", ttlPemohon: "Boyolali, 1 Januari 2006", desaPengantar: "Gladagsari", nomorSuratPengantar: "474/118/II/2026", tanggalSurat: "2027-01-04", dukuh: "Pengulon", rt: "003", rw: "001", tanggalNikah: "2027-01-05", namaPasangan: "Fitri Handayani", ttlPasangan: "Boyolali, 1 Januari 2000", agama: "Islam", alamatPasangan: "Pengulon, RT003/RW001, Desa Gladagsari, Kec. Gladagsari", savedAt: "2027-01-04T09:30:00.000Z" },
+];
+
 const DEFAULT_DATA = {
-  riwayat: [],
-  desa: ["Candisari", "Gladagsari", "Jlarem", "Kaligentong", "Kembang", "Ngadirojo", "Ngagrong", "Ngargoloka", "Sampetan", "Seboto"],
-  dukuhByDesa: {
-    Candisari: ["Banjaran", "Candilaras", "Candirejo", "Cuken", "Kembangkuning", "Kumpulrejo", "Ledoksari", "Ngelo", "Sukorejo", "Sorengan", "Tugusari", "Wonosari"],
-  },
+  riwayat: SAMPLE_RIWAYAT,
+  desa: DEFAULT_DESA,
+  dukuhByDesa: DEFAULT_DUKUH_BY_DESA,
   template: {
     version: 8,
     baris1: "PEMERINTAH KABUPATEN BOYOLALI",
@@ -49,17 +312,42 @@ const DEFAULT_DATA = {
     baris4: "website: gladagsarikec.boyolali.go.id, email: gladagsari@boyolali.go.id",
     baris5: "",
     logo: "",
-    namaPejabat: "........................................",
+    namaPejabat: "Gilang Pamungkas",
     jabatanUtama: "a.n. BUPATI BOYOLALI",
-    subJabatan: "CAMAT GLADAGSARI",
-    pangkat: "",
-    nipPejabat: "........................................",
+    subJabatan: "Kasi Pelayanan",
+    pangkat: "Penata Tingkat I",
+    nipPejabat: "19850101 201001 1 001",
     dasarHukum1: "Undang-Undang Nomor 1 Tahun 1974 tentang Perkawinan sebagaimana telah diubah dengan Undang-Undang Nomor 16 Tahun 2019.",
     dasarHukum2: "Peraturan Mahkamah Agung Nomor 5 Tahun 2019 tentang Pedoman Mengadili Permohonan Dispensasi Kawin.",
     alasan: "Dispensasi nikah diberikan untuk memenuhi persyaratan administrasi pencatatan perkawinan.",
   },
   draft: null,
-  sheets: [{ name: "KTP 474.4", cells: Array.from({ length: 5 }, () => Array(5).fill("")) }],
+  sheets: [
+    {
+      name: "KTP 474.4",
+      cells: [
+        ["No", "Tanggal Masuk", "Nama Pemohon", "NIK", "Desa / Dukuh", "Jenis Layanan", "No. Registrasi / Berkas", "Tanggal Selesai", "Keterangan"],
+        ["1", "2026-11-10", "Siti Aisyah", "3309012345670001", "Candisari", "Dispensasi Nikah", "474.2/156/6.20/2026", "2026-11-10", "Selesai"],
+        ["2", "2026-11-11", "Budi Santoso", "3309012345670002", "Gladagsari", "Surat Keterangan Usaha", "503/012/6.20/2026", "2026-11-11", "Selesai"],
+        ["3", "2026-11-12", "Agus Setiawan", "3309012345670003", "Kaligentong", "Legalisir Dokumen", "470/045/6.20/2026", "2026-11-12", "Selesai"],
+        ["4", "", "", "", "", "", "", "", ""],
+        ["5", "", "", "", "", "", "", "", ""],
+      ],
+    },
+  ],
+  patenTemplate: [
+    {
+      name: "Template PATEN",
+      cells: [
+        ["No", "Tanggal Masuk", "Nama Pemohon", "NIK", "Desa / Dukuh", "Jenis Layanan", "No. Registrasi / Berkas", "Tanggal Selesai", "Keterangan"],
+        ["", "", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", "", "", ""],
+      ],
+    },
+  ],
 };
 
 function hashPassword(password) {
@@ -159,34 +447,26 @@ function getData() {
   const result = { ...DEFAULT_DATA };
   for (const { resource, value: rawValue } of db.prepare("SELECT resource, value FROM app_data").all()) {
     const value = JSON.parse(rawValue);
-    if (resource === "template" && value.version !== DEFAULT_DATA.template.version) {
-      const migrated = { ...DEFAULT_DATA.template, ...value };
-      const email = [value.baris4, value.baris5]
-        .map((line) => (line || "").match(/email:\s*([^\s,]+)/i)?.[1])
-        .find(Boolean);
-      if (!migrated.baris3 || [
-        "Jl. Boyolali - Semarang Km. 10 Gladagsari, Telp. (0276) 331345, Kode Pos 57352",
-        "Jl. Boyolali - Semarang Km. 10 Gladagsari, Telp. (0276) 331345",
-        "Jl. Boyolali - Semarang Km. 10 Gladagsari Telp. (0276) 331345",
-        "Jl. Boyolali - Semarang Km. 10, Gladagsari",
-      ].includes(migrated.baris3)) {
-        migrated.baris3 = DEFAULT_DATA.template.baris3;
-      } else {
-        migrated.baris3 = migrated.baris3.replace(/,?\s*Kode\s*Pos\s+[^,]+/i, "").trim();
+    if (resource === "template") {
+      const merged = { ...DEFAULT_DATA.template, ...value };
+      if (!merged.namaPejabat || merged.namaPejabat.includes("...")) {
+        merged.namaPejabat = DEFAULT_DATA.template.namaPejabat;
+        merged.subJabatan = DEFAULT_DATA.template.subJabatan;
+        merged.pangkat = DEFAULT_DATA.template.pangkat;
+        merged.nipPejabat = DEFAULT_DATA.template.nipPejabat;
+        merged.jabatanUtama = DEFAULT_DATA.template.jabatanUtama;
       }
-      if (!/^website\s*:/i.test(migrated.baris4 || "")) {
-        migrated.baris4 = DEFAULT_DATA.template.baris4;
-      }
-      if (email && !/^[.]+$/.test(email)) {
-        migrated.baris4 = migrated.baris4.replace(/gladagsari@boyolali\.go\.id/i, email);
-      }
-      migrated.baris5 = "";
-      for (const [key, defaultValue] of Object.entries(DEFAULT_DATA.template)) {
-        if (key !== "version" && !migrated[key] && defaultValue) migrated[key] = defaultValue;
-      }
-      migrated.version = DEFAULT_DATA.template.version;
-      result[resource] = migrated;
+      result[resource] = merged;
       saveResource(resource, result[resource]);
+    } else if (resource === "dukuhByDesa") {
+      const merged = { ...DEFAULT_DATA.dukuhByDesa, ...value };
+      result[resource] = merged;
+      saveResource(resource, result[resource]);
+    } else if (resource === "riwayat") {
+      result[resource] = Array.isArray(value) && value.length > 1 ? value : SAMPLE_RIWAYAT;
+      if (!Array.isArray(value) || value.length <= 1) {
+        saveResource(resource, result[resource]);
+      }
     } else {
       result[resource] = value;
     }
@@ -313,8 +593,22 @@ const server = createServer(async (req, res) => {
         saveEmployees(value, actor);
         return send(res, 200, { ok: true });
       }
+      if (resource === "template" && actor.role !== "Administrator") {
+        return send(res, 403, { error: "Akses administrator diperlukan untuk mengubah Pengaturan Template." });
+      }
       saveResource(resource, value);
       return send(res, 200, { ok: true });
+    }
+
+    if (req.method === "POST" && path === "/api/xlsx/export") {
+      const { filename = "export.xlsx", sheets = [] } = await readJson(req);
+      const xlsxBuffer = generateXlsxBuffer(sheets);
+      res.writeHead(200, {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
+        "Content-Length": xlsxBuffer.length,
+      });
+      return res.end(xlsxBuffer);
     }
 
     if (req.method === "PUT" && path === "/api/profile") {

@@ -44,7 +44,11 @@ export default function App() {
           <Route path="data-desa-dukuh" element={<Protected role="Pelayanan"><DataDesaDukuh /></Protected>} />
           <Route path="pengaturan-template" element={<Protected role="Pelayanan"><PengaturanTemplate /></Protected>} />
         </Route>
-        <Route path="/registrasi-paten" element={<Protected role="Pelayanan"><RegistrasiPaten /></Protected>} />
+        <Route path="/registrasi-paten">
+          <Route index element={<Navigate to="editor" replace />} />
+          <Route path="editor" element={<Protected role="Pelayanan"><RegistrasiPaten mode="editor" /></Protected>} />
+          <Route path="template" element={<Protected role="Pelayanan"><RegistrasiPaten mode="template" /></Protected>} />
+        </Route>
 
         {/* Administrator */}
         <Route path="/admin" element={<Protected role="Administrator"><Dashboard /></Protected>} />

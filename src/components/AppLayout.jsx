@@ -10,6 +10,11 @@ const SURAT_CHILDREN = [
   { to: "/surat-dispensasi-nikah/pengaturan-template", label: "Pengaturan Template" },
 ];
 
+const PATEN_CHILDREN = [
+  { to: "/registrasi-paten/editor", label: "Editor" },
+  { to: "/registrasi-paten/template", label: "Template" },
+];
+
 const itemClass = ({ isActive }) => `nav-item${isActive ? " is-active" : ""}`;
 
 function SuratGroup() {
@@ -29,6 +34,32 @@ function SuratGroup() {
           <div className="nav-sub__line" />
           <div className="nav-sub__items">
             {SURAT_CHILDREN.map((c) => (
+              <NavLink key={c.to} to={c.to} className={itemClass}>{c.label}</NavLink>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PatenGroup() {
+  const { pathname } = useLocation();
+  const inside = pathname.startsWith("/registrasi-paten");
+  const [open, setOpen] = useState(inside);
+  useEffect(() => { if (inside) setOpen(true); }, [inside]);
+  return (
+    <div>
+      <button className="nav-item" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+        <FileText size={16} />
+        <span className="nav-item__label">Registrasi PATEN</span>
+        {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+      </button>
+      {open && (
+        <div className="nav-sub">
+          <div className="nav-sub__line" />
+          <div className="nav-sub__items">
+            {PATEN_CHILDREN.map((c) => (
               <NavLink key={c.to} to={c.to} className={itemClass}>{c.label}</NavLink>
             ))}
           </div>
@@ -86,9 +117,7 @@ export default function AppLayout() {
             ) : (
               <>
                 <SuratGroup />
-                <NavLink to="/registrasi-paten" className={itemClass}>
-                  <FileText size={16} /><span>Registrasi PATEN</span>
-                </NavLink>
+                <PatenGroup />
               </>
             )}
           </nav>

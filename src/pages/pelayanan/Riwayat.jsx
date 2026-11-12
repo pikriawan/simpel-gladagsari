@@ -4,7 +4,7 @@ import { Download, Eye, FileSpreadsheet, Trash2, Upload } from "lucide-react";
 import { DateField, Modal, PageHead, Pager, TextField } from "../../components/ui.jsx";
 import { useData } from "../../context/DataContext.jsx";
 import { alamatPemohon, fmtDate, fmtDateTime } from "../../lib/format.js";
-import { downloadCsv } from "../../lib/csv.js";
+import { downloadXlsx } from "../../lib/xlsx.js";
 
 const PER_PAGE = 20;
 
@@ -79,9 +79,21 @@ export default function Riwayat() {
   const filter = (setter) => (e) => { setter(e.target.value); setPage(1); };
 
   function exportExcel() {
-    downloadCsv("riwayat-surat-dispensasi-nikah.csv", [
-      ["Nomor surat", "Pemohon", "Pasangan", "Tanggal pernikahan", "Desa asal", "Waktu disimpan"],
-      ...rows.map((r) => [r.nomorSurat, r.namaPemohon, r.namaPasangan, fmtDate(r.tanggalNikah), r.desaPengantar, fmtDateTime(r.savedAt)]),
+    downloadXlsx("riwayat-surat-dispensasi-nikah", [
+      {
+        name: "Riwayat Dispensasi",
+        cells: [
+          ["Nomor Surat", "Nama Pemohon", "Nama Pasangan", "Tanggal Pernikahan", "Desa Pengantar", "Waktu Disimpan"],
+          ...rows.map((r) => [
+            r.nomorSurat,
+            r.namaPemohon,
+            r.namaPasangan,
+            fmtDate(r.tanggalNikah),
+            r.desaPengantar,
+            fmtDateTime(r.savedAt),
+          ]),
+        ],
+      },
     ]);
   }
 

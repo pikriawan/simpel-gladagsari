@@ -8,10 +8,53 @@ const DEFAULT_DESA = [
   "Candisari", "Gladagsari", "Jlarem", "Kaligentong", "Kembang",
   "Ngadirojo", "Ngagrong", "Ngargoloka", "Sampetan", "Seboto",
 ];
+
 const DEFAULT_DUKUH = {
   Candisari: [
     "Banjaran", "Candilaras", "Candirejo", "Cuken", "Kembangkuning", "Kumpulrejo",
-    "Ledoksari", "Ngelo", "Sukorejo", "Sorengan", "Tugusari", "Wonosari",
+    "Ledoksari", "Ngelo", "Sokorejo", "Sorengan", "Tugusari", "Wonosari",
+  ],
+  Gladagsari: [
+    "Gentansari", "Kupo", "Mitiran", "Mrawun", "Ngablak", "Pengulon", "Tempel",
+  ],
+  Jlarem: [
+    "Jlarem", "Ngaglik", "Grogolan", "Mongkrong", "Gemawang", "Tegalrejo",
+    "Sugihwaras", "Sukodono", "Kumpulrejo", "Semirat", "Dora", "Gondang Kulon",
+    "Gondang Sari", "Soka", "Jetis", "Ngablak A", "Ngablak B", "Kebondowo", "Sidorejo",
+  ],
+  Kaligentong: [
+    "Bener", "Bener Wetan", "Prandelan", "Prampelan", "Tegalsari", "Ngaduman",
+    "Karangsari", "Kalisari", "Banjarsari", "Prigen", "Kalipuyang", "Bendosari", "Ngelo",
+  ],
+  Kembang: [
+    "Babadan", "Dali", "Gatak", "Karangduwet", "Kepoh", "Klangon", "Klatak",
+    "Margosari", "Ngemplak", "Sewengi", "Tegalrejo", "Tegalsari", "Tegalwaton",
+    "Tempel", "Wates", "Kembang", "Sidodadi", "Purosari", "Mulyosari", "Kembangsari",
+  ],
+  Ngadirojo: [
+    "Bodrosari", "Dedegan", "Diwak", "Dukuhrejo", "Gondanglegi", "Jati Kulon",
+    "Jati Wetan", "Kadang", "Karang", "Kedung", "Kembang", "Magak", "Margodadi",
+    "Margokaton", "Margomulyo", "Margorejo", "Margosari", "Margosuci", "Melambong",
+    "Ngadirojo", "Pentur", "Rejosari", "Rejoso", "Tegalsari", "Tomo",
+  ],
+  Ngagrong: [
+    "Dukuh", "Gondangsari", "Gunungsari", "Kajongan", "Kalipuyang", "Karangtalun",
+    "Lengkong", "Ngaglik", "Ngagrong", "Ngargosari", "Ngegrek", "Pulerejo",
+    "Sidomulyo", "Sikepan", "Surodadi", "Tegalrejo", "Tompak", "Tonolayu",
+  ],
+  Ngargoloka: [
+    "Gawok", "Glagah", "Kwaron", "Losari", "Malibari", "Ngargoloka", "Pesan", "Tanen",
+  ],
+  Sampetan: [
+    "Bumirejo", "Cemorosewu", "Ganduman", "Gumuk", "Karangboyo", "Kendal",
+    "Kropak Kulon", "Kropak Wetan", "Mungsari", "Pereng Kulon", "Purwogondo",
+    "Purwosari", "Ringinsari Kulon", "Salamrejo", "Sampetan", "Selorejo",
+    "Sembung Kidul", "Sidorejo", "Sidorejo Wetan", "Sukorame", "Tanjungsari",
+    "Tarumulyo", "Tarumulyo Kulon", "Tempelsari",
+  ],
+  Seboto: [
+    "Bendo", "Cengklik", "Drajud", "Dungus", "Rejosari", "Seboto", "Selomiring",
+    "Sendang", "Tempel", "Wates",
   ],
 };
 
@@ -23,20 +66,48 @@ export const DEFAULT_TEMPLATE = {
   baris4: "website: gladagsarikec.boyolali.go.id, email: gladagsari@boyolali.go.id",
   baris5: "",
   logo: "",
-  namaPejabat: "........................................",
+  namaPejabat: "Gilang Pamungkas",
   jabatanUtama: "a.n. BUPATI BOYOLALI",
-  subJabatan: "CAMAT GLADAGSARI",
-  pangkat: "",
-  nipPejabat: "........................................",
+  subJabatan: "Kasi Pelayanan",
+  pangkat: "Penata Tingkat I",
+  nipPejabat: "19850101 201001 1 001",
   dasarHukum1: "Undang-Undang Nomor 1 Tahun 1974 tentang Perkawinan sebagaimana telah diubah dengan Undang-Undang Nomor 16 Tahun 2019.",
   dasarHukum2: "Peraturan Mahkamah Agung Nomor 5 Tahun 2019 tentang Pedoman Mengadili Permohonan Dispensasi Kawin.",
   alasan: "Dispensasi nikah diberikan untuk memenuhi persyaratan administrasi pencatatan perkawinan.",
 };
 
-const makeSheet = (name) => ({
-  name,
-  cells: Array.from({ length: 5 }, () => Array(5).fill("")),
-});
+export const DEFAULT_PATEN_COLUMNS = [
+  "No", "Tanggal Masuk", "Nama Pemohon", "NIK", "Desa / Dukuh",
+  "Jenis Layanan", "No. Registrasi / Berkas", "Tanggal Selesai", "Keterangan",
+];
+
+export const makeSheet = (name, rows = 100, cols = 20) => {
+  const cells = Array.from({ length: Math.max(5, rows) }, () => Array(Math.max(10, cols)).fill(""));
+  return { name, cells };
+};
+
+export const DEFAULT_SHEETS = [
+  {
+    name: "KTP 474.4",
+    cells: [
+      [...DEFAULT_PATEN_COLUMNS, "", ""],
+      ["1", "2026-11-10", "Siti Aisyah", "3309012345670001", "Candisari", "Dispensasi Nikah", "474.2/156/6.20/2026", "2026-11-10", "Selesai", "", ""],
+      ["2", "2026-11-11", "Budi Santoso", "3309012345670002", "Gladagsari", "Surat Keterangan Usaha", "503/012/6.20/2026", "2026-11-11", "Selesai", "", ""],
+      ["3", "2026-11-12", "Agus Setiawan", "3309012345670003", "Kaligentong", "Legalisir Dokumen", "470/045/6.20/2026", "2026-11-12", "Selesai", "", ""],
+      ...Array.from({ length: 96 }, () => Array(11).fill("")),
+    ],
+  },
+];
+
+export const DEFAULT_PATEN_TEMPLATE = [
+  {
+    name: "Template PATEN",
+    cells: [
+      [...DEFAULT_PATEN_COLUMNS, "", ""],
+      ...Array.from({ length: 99 }, () => Array(11).fill("")),
+    ],
+  },
+];
 
 /* --------------------------------- Provider --------------------------------- */
 
@@ -47,7 +118,8 @@ export function DataProvider({ children }) {
   const [template, setTemplateState] = useState(DEFAULT_TEMPLATE);
   const [pegawai, setPegawaiState] = useState([]);
   const [draft, setDraftState] = useState(null);
-  const [sheets, setSheetsState] = useState(() => [makeSheet("KTP 474.4")]);
+  const [sheets, setSheetsState] = useState(() => DEFAULT_SHEETS);
+  const [patenTemplate, setPatenTemplateState] = useState(() => DEFAULT_PATEN_TEMPLATE);
   const [dataError, setDataError] = useState("");
   const riwayatRef = useRef(riwayat);
   const desaRef = useRef(desa);
@@ -56,6 +128,7 @@ export function DataProvider({ children }) {
   const pegawaiRef = useRef(pegawai);
   const draftRef = useRef(draft);
   const sheetsRef = useRef(sheets);
+  const patenTemplateRef = useRef(patenTemplate);
 
   riwayatRef.current = riwayat;
   desaRef.current = desa;
@@ -64,6 +137,7 @@ export function DataProvider({ children }) {
   pegawaiRef.current = pegawai;
   draftRef.current = draft;
   sheetsRef.current = sheets;
+  patenTemplateRef.current = patenTemplate;
 
   const persist = useCallback((resource, ref, setState) => (next) => {
     const value = typeof next === "function" ? next(ref.current) : next;
@@ -82,6 +156,7 @@ export function DataProvider({ children }) {
   const setPegawai = useMemo(() => persist("pegawai", pegawaiRef, setPegawaiState), [persist]);
   const setDraft = useMemo(() => persist("draft", draftRef, setDraftState), [persist]);
   const setSheets = useMemo(() => persist("sheets", sheetsRef, setSheetsState), [persist]);
+  const setPatenTemplate = useMemo(() => persist("patenTemplate", patenTemplateRef, setPatenTemplateState), [persist]);
 
   const refreshData = useCallback(async () => {
     const data = await request("/data");
@@ -96,7 +171,8 @@ export function DataProvider({ children }) {
     apply("template", templateRef, setTemplateState, DEFAULT_TEMPLATE);
     apply("pegawai", pegawaiRef, setPegawaiState, []);
     apply("draft", draftRef, setDraftState, null);
-    apply("sheets", sheetsRef, setSheetsState, [makeSheet("KTP 474.4")]);
+    apply("sheets", sheetsRef, setSheetsState, DEFAULT_SHEETS);
+    apply("patenTemplate", patenTemplateRef, setPatenTemplateState, DEFAULT_PATEN_TEMPLATE);
   }, []);
 
   const addRiwayat = useCallback((rec) => {
@@ -119,12 +195,16 @@ export function DataProvider({ children }) {
       pegawai, setPegawai,
       draft, setDraft,
       sheets, setSheets, makeSheet,
+      patenTemplate, setPatenTemplate,
+      resetToPatenTemplate: () => {
+        setSheets(DEFAULT_SHEETS);
+      },
       refreshData, dataError, clearDataError: () => setDataError(""),
       resetDesaDukuh: () => { setDesa(DEFAULT_DESA); setDukuhByDesa(DEFAULT_DUKUH); },
       resetTemplate: () => setTemplate(DEFAULT_TEMPLATE),
     }),
-    [riwayat, desa, dukuhByDesa, template, pegawai, draft, sheets, addRiwayat, removeRiwayat,
-      setRiwayat, setDesa, setDukuhByDesa, setTemplate, setPegawai, setDraft, setSheets, refreshData, dataError]
+    [riwayat, desa, dukuhByDesa, template, pegawai, draft, sheets, patenTemplate, addRiwayat, removeRiwayat,
+      setRiwayat, setDesa, setDukuhByDesa, setTemplate, setPegawai, setDraft, setSheets, setPatenTemplate, refreshData, dataError]
   );
 
   return (
