@@ -192,7 +192,7 @@ export default function Dashboard({
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="flex flex-col gap-2">
-                                    <Button asChild className="w-full justify-between">
+                                    <Button asChild variant="outline" className="w-full justify-between">
                                         <Link href={userManager()}>
                                             User Manager
                                             <ArrowRight className="size-4" />

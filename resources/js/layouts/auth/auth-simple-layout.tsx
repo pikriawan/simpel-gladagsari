@@ -1,5 +1,4 @@
 import { Link } from '@inertiajs/react';
-import AppLogoIcon from '@/components/app-logo-icon';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 
@@ -9,28 +8,40 @@ export default function AuthSimpleLayout({
     description,
 }: AuthLayoutProps) {
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
-            <div className="w-full max-w-sm">
-                <div className="flex flex-col gap-8">
-                    <div className="flex flex-col items-center gap-4">
-                        <Link
-                            href={home()}
-                            className="flex flex-col items-center gap-2 font-medium"
-                        >
-                            <div className="mb-1 flex h-9 w-9 items-center justify-center rounded-md">
-                                <AppLogoIcon className="size-9 fill-current text-[var(--foreground)] dark:text-white" />
-                            </div>
-                            <span className="sr-only">{title}</span>
-                        </Link>
+        <div className="flex min-h-svh w-full bg-white">
+            {/* Panel Kiri – Form (50% pada desktop) */}
+            <div className="relative flex flex-1 flex-col items-center justify-center px-6 py-12 lg:w-1/2 lg:flex-none">
+                {/* Logo Simpel pojok kiri atas */}
+                <div className="absolute top-8 left-8 lg:top-[50px] lg:left-[50px]">
+                    <Link
+                        href={home()}
+                        className="font-bold text-2xl tracking-tight text-black"
+                        style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+                    >
+                        Simpel
+                    </Link>
+                </div>
 
-                        <div className="space-y-2 text-center">
-                            <h1 className="text-xl font-medium">{title}</h1>
-                            <p className="text-center text-sm text-muted-foreground">
-                                {description}
-                            </p>
-                        </div>
+                {/* Konten Form (Lebar pas 400px seperti di SVG) */}
+                <div className="w-full max-w-[400px]">
+                    <div className="mb-9 space-y-3 text-center">
+                        <h1 className="text-xl lg:text-[22px] font-bold text-black tracking-tight">{title}</h1>
+                        {description && (
+                            <p className="text-sm text-black leading-relaxed">{description}</p>
+                        )}
                     </div>
                     {children}
+                </div>
+            </div>
+
+            {/* Panel Kanan – Foto Kantor Kecamatan Gladagsari (50% dengan padding 24px dan rounded 12px sesuai SVG) */}
+            <div className="hidden lg:block lg:w-1/2 p-6 relative">
+                <div className="relative h-full w-full overflow-hidden rounded-[12px]">
+                    <img
+                        src="/assets/kantor-kecamatan.jpg"
+                        alt="Kantor Kecamatan Gladagsari"
+                        className="absolute inset-0 h-full w-full object-cover object-center"
+                    />
                 </div>
             </div>
         </div>
