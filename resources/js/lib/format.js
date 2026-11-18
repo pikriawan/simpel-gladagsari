@@ -30,6 +30,21 @@ const BULAN = [
     'Desember',
 ];
 
+export function fmtDateIndo(val) {
+    if (!val) return '';
+    let y, m, d;
+    if (typeof val === 'string' && val.includes('-')) {
+        [y, m, d] = val.slice(0, 10).split('-').map(Number);
+    } else if (typeof val === 'string' && val.includes('/')) {
+        [d, m, y] = val.split('/').map(Number);
+    } else {
+        const dt = new Date(val);
+        if (isNaN(dt.getTime())) return val;
+        y = dt.getFullYear(); m = dt.getMonth() + 1; d = dt.getDate();
+    }
+    return `${d} ${BULAN[m - 1]} ${y}`;
+}
+
 export function fmtDateDay(val) {
     if (!val) return '';
     let y;

@@ -257,7 +257,7 @@ export default function Riwayat({ records, filters }) {
         <>
             <Head title="Riwayat Surat Dispensasi Nikah" />
 
-            <div className="flex max-h-[calc(100svh-5rem)] min-h-0 w-full flex-1 flex-col gap-4 overflow-auto p-4">
+            <div className="flex h-full w-full flex-1 flex-col gap-4 p-4">
                 {/* Filters */}
                 <div className="flex flex-wrap items-end gap-3">
                     <div className="flex min-w-48 flex-1 flex-col gap-1.5">
@@ -306,7 +306,7 @@ export default function Riwayat({ records, filters }) {
                             {data && data.length > 0 ? (
                                 data.map((record) => (
                                     <TableRow key={record.id}>
-                                        <TableCell className="font-mono text-xs">
+                                        <TableCell>
                                             {record.letter_number ?? '-'}
                                         </TableCell>
                                         <TableCell>{record.applicant_name ?? '-'}</TableCell>

@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { fmtDate, fmtDateDay } from '@/lib/format';
+import { fmtDate, fmtDateDay, fmtDateIndo } from '@/lib/format';
 
 const DEFAULT_TEMPLATE = {
     version: 8,
@@ -88,10 +88,11 @@ export default function LetterPreview({
     const logo = '/assets/boyolali.png';
     const emailMatch = headerLines[3].match(/^(.*?\bemail:\s*)([^\s,]+)(.*)$/i);
     const applicantSubvillage = (form.subvillage || '').split(',')[0].trim();
+    const applicantVillage = (form.subvillage || '').split(',')[1]?.trim() || '';
     const applicantAddress = [
         applicantSubvillage || '..........',
         `RT ${form.rt || '000'}/RW ${form.rw || '000'}`,
-        `DESA ${(form.village || form.villageName || '..........').toUpperCase()}`,
+        `DESA ${(applicantVillage || '..........').toUpperCase()}`,
         'KEC. GLADAGSARI',
     ].join(', ');
     const partnerAddress = form.partnerAddress || '..........';
@@ -157,8 +158,11 @@ export default function LetterPreview({
                     <div>
                         Nomor :{' '}
                         {form.letterNumber
-                            ? `474.2/${form.letterNumber}/6.20/${new Date().getFullYear()}`
-                            : '..........'}
+                            ? form.letterNumber.includes('/6.20/') ||
+                              form.letterNumber.startsWith('474.2/')
+                                ? form.letterNumber
+                                : `474.2/${form.letterNumber}/6.20/${new Date().getFullYear()}`
+                            : `474.2/.../6.20/${new Date().getFullYear()}`}
                     </div>
                 </section>
 
@@ -269,7 +273,7 @@ export default function LetterPreview({
 
                 <footer className="preview__signature">
                     <div className="preview__signature-date">
-                        Gladagsari, {display(fmtDate(form.letterDate))}
+                        Gladagsari, {display(fmtDateIndo(form.letterDate))}
                     </div>
                     <div>Mengetahui</div>
                     <div>{display(config.jabatanUtama)}</div>

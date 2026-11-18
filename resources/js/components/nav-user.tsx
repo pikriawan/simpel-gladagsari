@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import { ChevronsUpDown } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -11,7 +11,6 @@ import {
     SidebarMenuItem,
     useSidebar,
 } from '@/components/ui/sidebar';
-import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -24,6 +23,13 @@ export function NavUser() {
         return null;
     }
 
+    const roleLabel =
+        auth.user.role === 'service'
+            ? 'Pelayanan'
+            : auth.user.role === 'administrator'
+              ? 'Administrator'
+              : auth.user.role;
+
     return (
         <SidebarMenu>
             <SidebarMenuItem>
@@ -31,11 +37,18 @@ export function NavUser() {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
+                            className="group h-auto w-full px-2 py-2 hover:bg-neutral-100 data-[state=open]:bg-neutral-100 transition-colors"
                             data-test="sidebar-menu-button"
                         >
-                            <UserInfo user={auth.user} />
-                            <ChevronsUpDown className="ml-auto size-4" />
+                            <div className="flex flex-1 flex-col text-left group-data-[collapsible=icon]:hidden">
+                                <span className="font-semibold text-base text-neutral-900 leading-tight">
+                                    {auth.user.name}
+                                </span>
+                                <span className="text-sm text-neutral-400 mt-1 font-normal">
+                                    {roleLabel}
+                                </span>
+                            </div>
+                            <SlidersHorizontal className="ml-auto size-5 text-neutral-800 shrink-0 group-data-[collapsible=icon]:mx-auto" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent

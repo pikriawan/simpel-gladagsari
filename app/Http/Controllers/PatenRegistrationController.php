@@ -24,10 +24,13 @@ class PatenRegistrationController extends Controller
         if ($snapshot) {
             $decoded = json_decode(
                 $snapshot->snapshot,
-                true,
+                false,
             );
 
-            if (is_array($decoded)) {
+            if ($decoded) {
+                if (isset($decoded->styles) && is_array($decoded->styles)) {
+                    $decoded->styles = new \stdClass();
+                }
                 $snapshot = $decoded;
             }
         }
@@ -44,10 +47,13 @@ class PatenRegistrationController extends Controller
         if ($snapshot) {
             $decoded = json_decode(
                 $snapshot->snapshot,
-                true,
+                false,
             );
 
-            if (is_array($decoded)) {
+            if ($decoded) {
+                if (isset($decoded->styles) && is_array($decoded->styles)) {
+                    $decoded->styles = new \stdClass();
+                }
                 $snapshot = $decoded;
             }
         }
@@ -59,15 +65,18 @@ class PatenRegistrationController extends Controller
 
     public function templateSnapshot(): JsonResponse
     {
-        $snapshot = PatenRegistrationTemplateSnapshot::first();;
+        $snapshot = PatenRegistrationTemplateSnapshot::first();
 
         if ($snapshot) {
             $decoded = json_decode(
                 $snapshot->snapshot,
-                true,
+                false,
             );
 
-            if (is_array($decoded)) {
+            if ($decoded) {
+                if (isset($decoded->styles) && is_array($decoded->styles)) {
+                    $decoded->styles = new \stdClass();
+                }
                 $snapshot = $decoded;
             }
         }
@@ -86,14 +95,22 @@ class PatenRegistrationController extends Controller
             ? PatenRegistrationTemplateSnapshot::class
             : PatenRegistrationSnapshot::class;
 
+        $snapshotData = $validated['snapshot'];
+
+        // Pastikan `styles` tetap objek JSON (bukan array kosong `[]`),
+        // agar style workbook tidak hilang saat round-trip JSON.
+        if (is_array($snapshotData) && isset($snapshotData['styles']) && is_array($snapshotData['styles']) && array_is_list($snapshotData['styles'])) {
+            $snapshotData['styles'] = new \stdClass();
+        }
+
         $snapshot = $model::first();
 
         if (!$snapshot) {
             $model::create([
-                'snapshot' => json_encode($validated['snapshot']),
+                'snapshot' => json_encode($snapshotData),
             ]);
         } else {
-            $snapshot->snapshot = json_encode($validated['snapshot']);
+            $snapshot->snapshot = json_encode($snapshotData);
             $snapshot->save();
         }
 

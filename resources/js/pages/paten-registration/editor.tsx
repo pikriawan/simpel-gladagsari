@@ -5,9 +5,8 @@ import { xlsxToUniverSnapshot } from '@/utils/xlsx-to-univer';
 import { editor, store as storePatenRegistration, templateSnapshot as templateSnapshotRoute } from '@/routes/paten-registration';
 import { Button } from '@/components/ui/button';
 
-import { Univer } from '@univerjs/core';
+import { Univer, LocaleType, CommandType, ICommandService } from '@univerjs/core';
 import { FUniver } from '@univerjs/core/facade';
-import { LocaleType } from '@univerjs/core';
 
 import { defaultTheme } from '@univerjs/themes';
 
@@ -55,10 +54,10 @@ import '@univerjs/sheets-formula-ui/lib/index.css';
 import '@univerjs/sheets-numfmt-ui/lib/index.css';
 
 export default function Editor({ snapshot }: { snapshot?: any }) {
-    const containerRef        = useRef<HTMLDivElement>(null);
-    const univerAPIRef        = useRef<any>(null);
-    const saveTimeoutRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const xlsxFileInputRef    = useRef<HTMLInputElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const univerAPIRef = useRef<any>(null);
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const xlsxFileInputRef = useRef<HTMLInputElement>(null);
     const [isImportingXlsx, setIsImportingXlsx] = useState(false);
     const [isResettingTemplate, setIsResettingTemplate] = useState(false);
 
@@ -73,6 +72,9 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
                 const fWorkbook = univerAPI.getActiveWorkbook();
                 if (!fWorkbook) return;
                 const snapshot = fWorkbook.save();
+                if (snapshot.styles && Array.isArray(snapshot.styles)) {
+                    snapshot.styles = {};
+                }
                 const token = document
                     .querySelector('meta[name="csrf-token"]')
                     ?.getAttribute('content');
@@ -238,7 +240,7 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
 
                 const univerAPI = univerAPIRef.current;
                 if (!univerAPI) return;
-                const current   = univerAPI.getActiveWorkbook();
+                const current = univerAPI.getActiveWorkbook();
                 const currentId = current?.getId?.();
                 if (currentId) univerAPI.disposeUnit(currentId);
                 univerAPI.createWorkbook(univerSnapshot);
@@ -298,6 +300,70 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
     useEffect(() => {
         if (!containerRef.current) return;
 
+        // Set untuk melacak portal containers yang dibuat oleh Univer
+        const univerPortals = new Set<HTMLElement>();
+
+        // Intercept appendChild agar portal Univer yang dibuat saat fullscreen langsung diarahkan ke container
+        const originalAppendChild = document.body.appendChild.bind(document.body);
+        document.body.appendChild = <T extends Node>(child: T): T => {
+            if (child instanceof HTMLElement && child.id !== 'app' && child.tagName !== 'SCRIPT') {
+                univerPortals.add(child);
+                if (
+                    document.fullscreenElement &&
+                    containerRef.current &&
+                    (document.fullscreenElement === containerRef.current || containerRef.current.contains(document.fullscreenElement))
+                ) {
+                    return containerRef.current.appendChild(child);
+                }
+            }
+            return originalAppendChild(child);
+        };
+
+        // Perlindungan agar unmount third-party (seperti Univer portal) tidak melempar NotFoundError pada removeChild
+        const originalRemoveChild = document.body.removeChild.bind(document.body);
+        document.body.removeChild = <T extends Node>(child: T): T => {
+            if (child instanceof HTMLElement) {
+                univerPortals.delete(child);
+            }
+            if (child.parentNode === document.body) {
+                return originalRemoveChild(child);
+            }
+            if (child.parentNode) {
+                return child.parentNode.removeChild(child) as T;
+            }
+            return child;
+        };
+
+        // Ketika tabel fullscreen (via native Univer fullscreen), pindahkan portal popup Univer ke dalam container fullscreen
+        // agar browser merender popup di layer fullscreen (bukan tersembunyi di luar elemen fullscreen).
+        const onFullscreenChange = () => {
+            const fsEl = document.fullscreenElement;
+            const container = containerRef.current;
+            if (fsEl && container && (fsEl === container || container.contains(fsEl))) {
+                // Masuk fullscreen: pindahkan portal Univer dari body ke container
+                univerPortals.forEach((portal) => {
+                    if (portal.parentNode === document.body) {
+                        container.appendChild(portal);
+                    }
+                });
+                // Tangkap juga jika ada elemen portal lain yang sudah terlanjur di-append ke body
+                Array.from(document.body.children).forEach((child) => {
+                    if (child instanceof HTMLElement && child.id !== 'app' && child.tagName !== 'SCRIPT' && child !== container) {
+                        univerPortals.add(child);
+                        container.appendChild(child);
+                    }
+                });
+            } else if (container) {
+                // Keluar fullscreen: kembalikan portal ke document.body
+                univerPortals.forEach((portal) => {
+                    if (portal.parentNode === container) {
+                        document.body.appendChild(portal);
+                    }
+                });
+            }
+        };
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+
         const univer = new Univer({
             locale: LocaleType.EN_US,
             locales: {
@@ -336,6 +402,11 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
         let loadedFromSnapshot = false;
         try {
             if (snapshot) {
+                // Pastikan `styles` selalu objek, bukan array kosong `[]`
+                // (round-trip JSON PHP bisa mengubah `{}` menjadi `[]`).
+                if (snapshot.styles && Array.isArray(snapshot.styles)) {
+                    snapshot.styles = {};
+                }
                 univerAPI.createWorkbook(snapshot);
                 loadedFromSnapshot = true;
             }
@@ -367,12 +438,27 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
         );
 
         return () => {
+            document.removeEventListener('fullscreenchange', onFullscreenChange);
+            const container = containerRef.current;
+            if (container) {
+                univerPortals.forEach((portal) => {
+                    if (portal.parentNode === container) {
+                        document.body.appendChild(portal);
+                    }
+                });
+            }
+            document.body.appendChild = originalAppendChild;
+            document.body.removeChild = originalRemoveChild;
             if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
             }
             disposable?.dispose();
             univerAPIRef.current = null;
-            univer.dispose();
+            try {
+                univer.dispose();
+            } catch (error) {
+                console.error('Gagal dispose Univer', error);
+            }
         };
     }, []);
 
@@ -388,6 +474,8 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
                 onChange={handleImportXlsxFile}
             />
 
+            {/* Univer mengelola fullscreen-nya sendiri via CSS internal,
+                container cukup diberi tinggi penuh viewport agar tidak ada ruang kosong. */}
             <div
                 ref={containerRef}
                 style={{ height: 'calc(100vh - 5rem)', width: '100%' }}

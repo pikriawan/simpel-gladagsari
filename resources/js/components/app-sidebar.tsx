@@ -1,33 +1,24 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
-    BookOpen,
-    ChevronRight,
+    ChevronDown,
     FileText,
-    FolderGit2,
     LayoutGrid,
     Users,
 } from 'lucide-react';
-import AppLogo from '@/components/app-logo';
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { NavFooter } from '@/components/nav-footer';
 import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
     SidebarContent,
     SidebarFooter,
     SidebarGroup,
-    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
-    SidebarMenuButton,
     SidebarMenuItem,
-    SidebarMenuSub,
-    SidebarMenuSubButton,
-    SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { dashboard, userManager } from '@/routes';
@@ -72,19 +63,6 @@ const patenRegistrationSubItems = [
     },
 ];
 
-const footerNavItems = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
-
 export function AppSidebar() {
     const { auth } = usePage().props;
     const { isCurrentUrl } = useCurrentUrl();
@@ -93,145 +71,152 @@ export function AppSidebar() {
     const isService = auth.user.role === 'service';
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href={dashboard()} prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+        <Sidebar collapsible="icon" variant="inset" className="bg-white">
+            <SidebarHeader className="px-5 pt-6 pb-2 group-data-[collapsible=icon]:px-2">
+                <Link
+                    href={dashboard()}
+                    prefetch
+                    className="font-bold text-2xl tracking-tight text-neutral-900 block group-data-[collapsible=icon]:hidden"
+                >
+                    Simpel
+                </Link>
+                <Link
+                    href={dashboard()}
+                    prefetch
+                    className="font-bold text-xl tracking-tight text-neutral-900 hidden group-data-[collapsible=icon]:block text-center"
+                >
+                    S
+                </Link>
             </SidebarHeader>
 
-            <SidebarContent>
-                <SidebarGroup className="px-2 py-0">
-                    <SidebarGroupLabel>Platform</SidebarGroupLabel>
-                    <SidebarMenu>
+            <SidebarContent className="px-3 py-2">
+                <SidebarGroup className="p-0">
+                    <SidebarMenu className="gap-2">
+                        {/* Dashboard */}
                         <SidebarMenuItem>
-                            <SidebarMenuButton
-                                asChild
-                                isActive={isCurrentUrl(dashboard())}
-                                tooltip={{ children: 'Dashboard' }}
+                            <Link
+                                href={dashboard()}
+                                prefetch
+                                className={`flex items-center gap-3 w-full h-11 px-3.5 rounded-lg text-sm font-medium transition-colors ${
+                                    isCurrentUrl(dashboard())
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'text-neutral-800 hover:bg-neutral-100 hover:text-neutral-900'
+                                }`}
                             >
-                                <Link href={dashboard()} prefetch>
-                                    <LayoutGrid />
-                                    <span>Dashboard</span>
-                                </Link>
-                            </SidebarMenuButton>
+                                <LayoutGrid className="size-5 shrink-0" />
+                                <span className="group-data-[collapsible=icon]:hidden">
+                                    Dashboard
+                                </span>
+                            </Link>
                         </SidebarMenuItem>
 
+                        {/* User Manager for Admin */}
                         {isAdmin && (
                             <SidebarMenuItem>
-                                <SidebarMenuButton
-                                    asChild
-                                    isActive={isCurrentUrl(userManager())}
-                                    tooltip={{ children: 'User Manager' }}
+                                <Link
+                                    href={userManager()}
+                                    prefetch
+                                    className={`flex items-center gap-3 w-full h-11 px-3.5 rounded-lg text-sm font-medium transition-colors ${
+                                        isCurrentUrl(userManager())
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'text-neutral-800 hover:bg-neutral-100 hover:text-neutral-900'
+                                    }`}
                                 >
-                                    <Link href={userManager()} prefetch>
-                                        <Users />
-                                        <span>User Manager</span>
-                                    </Link>
-                                </SidebarMenuButton>
+                                    <Users className="size-5 shrink-0" />
+                                    <span className="group-data-[collapsible=icon]:hidden">
+                                        User Manager
+                                    </span>
+                                </Link>
                             </SidebarMenuItem>
                         )}
 
+                        {/* Surat Dispensasi Nikah */}
                         {!isAdmin && (
                             <Collapsible
-                                asChild
-                                defaultOpen={suratDispensasiSubItems.some(
-                                    (item) => isCurrentUrl(item.href),
-                                )}
+                                defaultOpen={true}
                                 className="group/collapsible"
                             >
                                 <SidebarMenuItem>
                                     <CollapsibleTrigger asChild>
-                                        <SidebarMenuButton
-                                            tooltip={{
-                                                children:
-                                                    'Surat Dispensasi Nikah',
-                                            }}
+                                        <button
+                                            type="button"
+                                            className="flex items-start justify-between w-full px-3.5 py-2.5 rounded-lg text-neutral-800 hover:bg-neutral-100 transition-colors group cursor-pointer text-left"
                                         >
-                                            <FileText />
-                                            <span>Surat Dispensasi Nikah</span>
-                                            <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                                        </SidebarMenuButton>
+                                            <div className="flex items-start gap-3">
+                                                <FileText className="size-5 text-neutral-800 shrink-0 mt-0.5" />
+                                                <span className="text-sm font-medium text-neutral-900 leading-snug group-data-[collapsible=icon]:hidden">
+                                                    Surat Dispensasi
+                                                    <br />
+                                                    Nikah
+                                                </span>
+                                            </div>
+                                            <ChevronDown className="size-4 text-neutral-700 shrink-0 mt-1 transition-transform duration-200 group-data-[state=closed]/collapsible:-rotate-90 group-data-[collapsible=icon]:hidden" />
+                                        </button>
                                     </CollapsibleTrigger>
-                                    <CollapsibleContent>
-                                        <SidebarMenuSub>
+                                    <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
+                                        <div className="ml-6 pl-3 py-1 flex flex-col gap-1 border-l border-neutral-300">
                                             {suratDispensasiSubItems.map(
                                                 (item) => (
-                                                    <SidebarMenuSubItem
+                                                    <Link
                                                         key={item.title}
+                                                        href={item.href}
+                                                        prefetch
+                                                        className={`flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                            isCurrentUrl(item.href)
+                                                                ? 'bg-primary text-primary-foreground'
+                                                                : 'text-neutral-800 hover:bg-neutral-100 hover:text-neutral-900'
+                                                        }`}
                                                     >
-                                                        <SidebarMenuSubButton
-                                                            asChild
-                                                            isActive={isCurrentUrl(
-                                                                item.href,
-                                                            )}
-                                                        >
-                                                            <Link
-                                                                href={item.href}
-                                                                prefetch
-                                                            >
-                                                                {item.title}
-                                                            </Link>
-                                                        </SidebarMenuSubButton>
-                                                    </SidebarMenuSubItem>
+                                                        {item.title}
+                                                    </Link>
                                                 ),
                                             )}
-                                        </SidebarMenuSub>
+                                        </div>
                                     </CollapsibleContent>
                                 </SidebarMenuItem>
                             </Collapsible>
                         )}
 
+                        {/* Registrasi PATEN */}
                         {isService && (
                             <Collapsible
-                                asChild
-                                defaultOpen={patenRegistrationSubItems.some(
-                                    (item) => isCurrentUrl(item.href),
-                                )}
+                                defaultOpen={true}
                                 className="group/collapsible"
                             >
                                 <SidebarMenuItem>
                                     <CollapsibleTrigger asChild>
-                                        <SidebarMenuButton
-                                            tooltip={{
-                                                children: 'Registrasi PATEN',
-                                            }}
+                                        <button
+                                            type="button"
+                                            className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-lg text-neutral-800 hover:bg-neutral-100 transition-colors group cursor-pointer text-left"
                                         >
-                                            <FileText />
-                                            <span>Registrasi PATEN</span>
-                                            <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                                        </SidebarMenuButton>
+                                            <div className="flex items-center gap-3">
+                                                <FileText className="size-5 text-neutral-800 shrink-0" />
+                                                <span className="text-sm font-medium text-neutral-900 group-data-[collapsible=icon]:hidden">
+                                                    Registrasi PATEN
+                                                </span>
+                                            </div>
+                                            <ChevronDown className="size-4 text-neutral-700 shrink-0 transition-transform duration-200 group-data-[state=closed]/collapsible:-rotate-90 group-data-[collapsible=icon]:hidden" />
+                                        </button>
                                     </CollapsibleTrigger>
-                                    <CollapsibleContent>
-                                        <SidebarMenuSub>
+                                    <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
+                                        <div className="ml-6 pl-3 py-1 flex flex-col gap-1 border-l border-neutral-300">
                                             {patenRegistrationSubItems.map(
                                                 (item) => (
-                                                    <SidebarMenuSubItem
+                                                    <Link
                                                         key={item.title}
+                                                        href={item.href}
+                                                        prefetch
+                                                        className={`flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                            isCurrentUrl(item.href)
+                                                                ? 'bg-primary text-primary-foreground'
+                                                                : 'text-neutral-800 hover:bg-neutral-100 hover:text-neutral-900'
+                                                        }`}
                                                     >
-                                                        <SidebarMenuSubButton
-                                                            asChild
-                                                            isActive={isCurrentUrl(
-                                                                item.href,
-                                                            )}
-                                                        >
-                                                            <Link
-                                                                href={item.href}
-                                                                prefetch
-                                                            >
-                                                                {item.title}
-                                                            </Link>
-                                                        </SidebarMenuSubButton>
-                                                    </SidebarMenuSubItem>
+                                                        {item.title}
+                                                    </Link>
                                                 ),
                                             )}
-                                        </SidebarMenuSub>
+                                        </div>
                                     </CollapsibleContent>
                                 </SidebarMenuItem>
                             </Collapsible>
@@ -240,7 +225,7 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
 
-            <SidebarFooter>
+            <SidebarFooter className="border-t border-neutral-200 p-3">
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
