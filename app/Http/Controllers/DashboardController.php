@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\MarriageDispensation;
-use App\Models\PatenRegistrationSnapshot;
-use App\Models\PatenRegistrationTemplateSnapshot;
 use App\Models\User;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -30,8 +28,6 @@ class DashboardController extends Controller
         return Inertia::render('dashboard', [
             'stats' => [
                 'totalMarriageDispensations' => MarriageDispensation::count(),
-                'hasPatenSnapshot' => PatenRegistrationSnapshot::exists(),
-                'hasPatenTemplateSnapshot' => PatenRegistrationTemplateSnapshot::exists(),
             ],
             'recentMarriageDispensations' => MarriageDispensation::latest()->take(5)->get([
                 'id', 'letter_number', 'applicant_name', 'partner_name', 'marriage_date', 'village', 'created_at',

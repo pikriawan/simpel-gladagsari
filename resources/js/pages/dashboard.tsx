@@ -2,7 +2,6 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import type { ComponentType } from 'react';
 import {
     ArrowRight,
-    FileSpreadsheet,
     FileText,
     LayoutGrid,
     Users,
@@ -50,8 +49,6 @@ type DashboardProps = {
         inactiveUsers?: number;
         serviceUsers?: number;
         totalMarriageDispensations?: number;
-        hasPatenSnapshot?: boolean;
-        hasPatenTemplateSnapshot?: boolean;
     };
     recentUsers?: RecentUser[];
     recentMarriageDispensations?: RecentDispensation[];
@@ -109,15 +106,6 @@ export default function Dashboard({
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 {isAdmin ? (
                     <>
-                        <div className="flex flex-col gap-1">
-                            <h1 className="text-2xl font-bold tracking-tight">
-                                Dashboard Administrator
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                Ringkasan pengelolaan pegawai dan akses cepat ke fitur administrasi.
-                            </p>
-                        </div>
-
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                             <StatCard
                                 title="Total Pegawai"
@@ -216,41 +204,12 @@ export default function Dashboard({
                     </>
                 ) : (
                     <>
-                        <div className="flex flex-col gap-1">
-                            <h1 className="text-2xl font-bold tracking-tight">
-                                Dashboard Layanan
-                            </h1>
-                            <p className="text-sm text-muted-foreground">
-                                Ringkasan surat dispensasi nikah dan registrasi PATEN.
-                            </p>
-                        </div>
-
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-4 sm:grid-cols-1">
                             <StatCard
                                 title="Total Surat Dispensasi"
                                 value={stats.totalMarriageDispensations ?? 0}
                                 description="Surat yang tersimpan"
                                 icon={FileText}
-                            />
-                            <StatCard
-                                title="Data Registrasi PATEN"
-                                value={
-                                    stats.hasPatenSnapshot
-                                        ? 'Tersedia'
-                                        : 'Belum ada'
-                                }
-                                description="Snapshot workbook editor"
-                                icon={FileSpreadsheet}
-                            />
-                            <StatCard
-                                title="Template Registrasi PATEN"
-                                value={
-                                    stats.hasPatenTemplateSnapshot
-                                        ? 'Tersedia'
-                                        : 'Belum ada'
-                                }
-                                description="Snapshot template"
-                                icon={FileSpreadsheet}
                             />
                         </div>
 
