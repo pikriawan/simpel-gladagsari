@@ -12,6 +12,7 @@ import {
 } from '@/routes/marriage-dispensation';
 import { Button } from '@/components/ui/button';
 import LetterPreview from '@/components/letter-preview';
+import { downloadLetterPdf } from '@/lib/download-letter-pdf';
 import {
     Field,
     FieldError,
@@ -48,6 +49,7 @@ const RELIGIONS = [
 ];
 
 const EMPTY_FORM = {
+    id: null,
     letterNumber: '',
     village: '',
     referenceLetterNumber: '',
@@ -82,16 +84,17 @@ function recordToForm(record) {
         sub = sub.split(',')[0].trim();
     }
     return {
+        id: record.id ?? null,
         letterNumber: record.letter_number ?? '',
         village: vil,
         referenceLetterNumber: record.reference_letter_number ?? '',
-        letterDate: record.letter_date ?? '',
+        letterDate: (record.letter_date ?? '').slice(0, 10),
         applicantName: record.applicant_name ?? '',
         applicantBirthPlaceDate: record.applicant_birth_place_date ?? '',
         subvillage: sub,
         rt: record.rt ?? '',
         rw: record.rw ?? '',
-        marriageDate: record.marriage_date ?? '',
+        marriageDate: (record.marriage_date ?? '').slice(0, 10),
         partnerName: record.partner_name ?? '',
         partnerBirthPlaceDate: record.partner_birth_place_date ?? '',
         religion: record.religion ?? '',
@@ -176,9 +179,47 @@ export default function Editor({ record, templateSettings = {} }) {
         setIsSubmitting(true);
         router.post(storeMarriageDispensation().url, form, {
             preserveScroll: true,
-            onSuccess: () => {
-                setIsSubmitting(false);
-                window.print();
+            onSuccess: async () => {
+                const rawNumber = (form.letterNumber || '').trim();
+                const fullLetterNumber = rawNumber
+                    ? rawNumber.includes('/6.20/') || rawNumber.startsWith('474.2/')
+                        ? rawNumber
+                        : `474.2/${rawNumber}/6.20/${new Date().getFullYear()}`
+                    : '';
+
+                // Karakter seperti '/' diganti '-' agar valid sebagai nama file di semua OS
+                const cleanNumber = fullLetterNumber
+                    .replace(/[\\/:*?"<>|]/g, '-')
+                    .replace(/-+/g, '-');
+                const cleanApplicant = (form.applicantName || '')
+                    .trim()
+                    .replace(/[\\/:*?"<>|]/g, '')
+                    .replace(/\s+/g, '_');
+
+                let filename = 'Surat_Dispensasi_Nikah.pdf';
+                if (cleanNumber && cleanApplicant) {
+                    filename = `${cleanNumber}_${cleanApplicant}.pdf`;
+                } else if (cleanNumber) {
+                    filename = `${cleanNumber}.pdf`;
+                } else if (cleanApplicant) {
+                    filename = `${cleanApplicant}.pdf`;
+                }
+
+                try {
+                    await downloadLetterPdf(
+                        document.getElementById('printable-letter'),
+                        filename,
+                    );
+                } catch (error) {
+                    console.error('Gagal mengunduh PDF:', error);
+                } finally {
+                    setIsSubmitting(false);
+                }
+
+                // Otomatis langsung mengarah ke print dialog
+                setTimeout(() => {
+                    window.print();
+                }, 300);
             },
             onError: () => {
                 setIsSubmitting(false);

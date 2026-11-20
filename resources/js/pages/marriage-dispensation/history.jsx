@@ -105,6 +105,7 @@ function DetailModal({ record, open, onClose, onDelete, onLoadToEditor }) {
                         <DetailRow label="Nama desa pengantar" value={record.village ?? record.village_name} />
                         <DetailRow label="Nomor surat pengantar" value={record.reference_letter_number} />
                         <DetailRow label="Tanggal surat dikeluarkan" value={formatDate(record.letter_date)} />
+                        <DetailRow label="Terakhir diubah" value={formatDateTime(record.updated_at ?? record.created_at)} />
                     </div>
                 </section>
 
@@ -298,7 +299,7 @@ export default function Riwayat({ records, filters }) {
                                 <TableHead>Pasangan</TableHead>
                                 <TableHead>Tanggal pernikahan</TableHead>
                                 <TableHead>Desa asal</TableHead>
-                                <TableHead>Waktu disimpan</TableHead>
+                                <TableHead>Terakhir diubah</TableHead>
                                 <TableHead className="w-16" />
                             </TableRow>
                         </TableHeader>
@@ -314,7 +315,7 @@ export default function Riwayat({ records, filters }) {
                                         <TableCell>{formatDate(record.marriage_date)}</TableCell>
                                         <TableCell>{record.village ?? record.village_name ?? '-'}</TableCell>
                                         <TableCell className="text-xs text-muted-foreground">
-                                            {formatDateTime(record.created_at)}
+                                            {formatDateTime(record.updated_at ?? record.created_at)}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-1">

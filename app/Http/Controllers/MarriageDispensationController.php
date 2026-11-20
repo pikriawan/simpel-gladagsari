@@ -45,7 +45,7 @@ class MarriageDispensationController extends Controller
     public function history(Request $request): Response
     {
         $records = $this->buildQuery($request)
-            ->latest()
+            ->latest('updated_at')
             ->paginate(15)
             ->withQueryString();
 
@@ -208,6 +208,7 @@ class MarriageDispensationController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'id' => ['nullable', 'integer', 'exists:marriage_dispensations,id'],
             'letterNumber' => ['nullable', 'string', 'max:255'],
             'village' => ['nullable', 'string', 'max:255'],
             'villageName' => ['nullable', 'string', 'max:255'],
@@ -225,7 +226,7 @@ class MarriageDispensationController extends Controller
             'partnerAddress' => ['nullable', 'string'],
         ]);
 
-        MarriageDispensation::create([
+        $payload = [
             'letter_number' => $validated['letterNumber'] ?? null,
             'village' => $validated['village'] ?? $validated['villageName'] ?? null,
             'reference_letter_number' => $validated['referenceLetterNumber'] ?? null,
@@ -240,7 +241,19 @@ class MarriageDispensationController extends Controller
             'partner_birth_place_date' => $validated['partnerBirthPlaceDate'] ?? null,
             'religion' => $validated['religion'] ?? null,
             'partner_address' => $validated['partnerAddress'] ?? null,
-        ]);
+        ];
+
+        if (! empty($validated['id'])) {
+            $existing = MarriageDispensation::find($validated['id']);
+            if ($existing) {
+                $existing->update($payload);
+                $existing->touch();
+
+                return back()->with('success', 'Surat berhasil diperbarui.');
+            }
+        }
+
+        MarriageDispensation::create($payload);
 
         return back()->with('success', 'Surat berhasil disimpan.');
     }
