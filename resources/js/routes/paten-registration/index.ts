@@ -1,9 +1,9 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::editor
- * @see app/Http/Controllers/PatenRegistrationController.php:20
- * @route '/paten-registration/editor'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:20
+* @route '/paten-registration/editor'
+*/
 export const editor = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: editor.url(options),
     method: 'get',
@@ -16,72 +16,75 @@ editor.definition = {
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::editor
- * @see app/Http/Controllers/PatenRegistrationController.php:20
- * @route '/paten-registration/editor'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:20
+* @route '/paten-registration/editor'
+*/
 editor.url = (options?: RouteQueryOptions) => {
     return editor.definition.url + queryParams(options)
 }
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::editor
- * @see app/Http/Controllers/PatenRegistrationController.php:20
- * @route '/paten-registration/editor'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:20
+* @route '/paten-registration/editor'
+*/
 editor.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: editor.url(options),
     method: 'get',
 })
+
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::editor
- * @see app/Http/Controllers/PatenRegistrationController.php:20
- * @route '/paten-registration/editor'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:20
+* @route '/paten-registration/editor'
+*/
 editor.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: editor.url(options),
     method: 'head',
 })
 
-    /**
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::editor
- * @see app/Http/Controllers/PatenRegistrationController.php:20
- * @route '/paten-registration/editor'
- */
-    const editorForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: editor.url(options),
-        method: 'get',
-    })
+* @see app/Http/Controllers/PatenRegistrationController.php:20
+* @route '/paten-registration/editor'
+*/
+const editorForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: editor.url(options),
+    method: 'get',
+})
 
-            /**
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::editor
- * @see app/Http/Controllers/PatenRegistrationController.php:20
- * @route '/paten-registration/editor'
- */
-        editorForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: editor.url(options),
-            method: 'get',
-        })
-            /**
+* @see app/Http/Controllers/PatenRegistrationController.php:20
+* @route '/paten-registration/editor'
+*/
+editorForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: editor.url(options),
+    method: 'get',
+})
+
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::editor
- * @see app/Http/Controllers/PatenRegistrationController.php:20
- * @route '/paten-registration/editor'
- */
-        editorForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: editor.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    editor.form = editorForm
+* @see app/Http/Controllers/PatenRegistrationController.php:20
+* @route '/paten-registration/editor'
+*/
+editorForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: editor.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+editor.form = editorForm
+
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::template
- * @see app/Http/Controllers/PatenRegistrationController.php:43
- * @route '/paten-registration/template'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:43
+* @route '/paten-registration/template'
+*/
 export const template = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: template.url(options),
     method: 'get',
@@ -94,72 +97,75 @@ template.definition = {
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::template
- * @see app/Http/Controllers/PatenRegistrationController.php:43
- * @route '/paten-registration/template'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:43
+* @route '/paten-registration/template'
+*/
 template.url = (options?: RouteQueryOptions) => {
     return template.definition.url + queryParams(options)
 }
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::template
- * @see app/Http/Controllers/PatenRegistrationController.php:43
- * @route '/paten-registration/template'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:43
+* @route '/paten-registration/template'
+*/
 template.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: template.url(options),
     method: 'get',
 })
+
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::template
- * @see app/Http/Controllers/PatenRegistrationController.php:43
- * @route '/paten-registration/template'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:43
+* @route '/paten-registration/template'
+*/
 template.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: template.url(options),
     method: 'head',
 })
 
-    /**
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::template
- * @see app/Http/Controllers/PatenRegistrationController.php:43
- * @route '/paten-registration/template'
- */
-    const templateForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: template.url(options),
-        method: 'get',
-    })
+* @see app/Http/Controllers/PatenRegistrationController.php:43
+* @route '/paten-registration/template'
+*/
+const templateForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: template.url(options),
+    method: 'get',
+})
 
-            /**
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::template
- * @see app/Http/Controllers/PatenRegistrationController.php:43
- * @route '/paten-registration/template'
- */
-        templateForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: template.url(options),
-            method: 'get',
-        })
-            /**
+* @see app/Http/Controllers/PatenRegistrationController.php:43
+* @route '/paten-registration/template'
+*/
+templateForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: template.url(options),
+    method: 'get',
+})
+
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::template
- * @see app/Http/Controllers/PatenRegistrationController.php:43
- * @route '/paten-registration/template'
- */
-        templateForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: template.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    template.form = templateForm
+* @see app/Http/Controllers/PatenRegistrationController.php:43
+* @route '/paten-registration/template'
+*/
+templateForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: template.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+template.form = templateForm
+
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::templateSnapshot
- * @see app/Http/Controllers/PatenRegistrationController.php:66
- * @route '/paten-registration/template-snapshot'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:66
+* @route '/paten-registration/template-snapshot'
+*/
 export const templateSnapshot = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: templateSnapshot.url(options),
     method: 'get',
@@ -172,72 +178,75 @@ templateSnapshot.definition = {
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::templateSnapshot
- * @see app/Http/Controllers/PatenRegistrationController.php:66
- * @route '/paten-registration/template-snapshot'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:66
+* @route '/paten-registration/template-snapshot'
+*/
 templateSnapshot.url = (options?: RouteQueryOptions) => {
     return templateSnapshot.definition.url + queryParams(options)
 }
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::templateSnapshot
- * @see app/Http/Controllers/PatenRegistrationController.php:66
- * @route '/paten-registration/template-snapshot'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:66
+* @route '/paten-registration/template-snapshot'
+*/
 templateSnapshot.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: templateSnapshot.url(options),
     method: 'get',
 })
+
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::templateSnapshot
- * @see app/Http/Controllers/PatenRegistrationController.php:66
- * @route '/paten-registration/template-snapshot'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:66
+* @route '/paten-registration/template-snapshot'
+*/
 templateSnapshot.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: templateSnapshot.url(options),
     method: 'head',
 })
 
-    /**
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::templateSnapshot
- * @see app/Http/Controllers/PatenRegistrationController.php:66
- * @route '/paten-registration/template-snapshot'
- */
-    const templateSnapshotForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: templateSnapshot.url(options),
-        method: 'get',
-    })
+* @see app/Http/Controllers/PatenRegistrationController.php:66
+* @route '/paten-registration/template-snapshot'
+*/
+const templateSnapshotForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: templateSnapshot.url(options),
+    method: 'get',
+})
 
-            /**
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::templateSnapshot
- * @see app/Http/Controllers/PatenRegistrationController.php:66
- * @route '/paten-registration/template-snapshot'
- */
-        templateSnapshotForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: templateSnapshot.url(options),
-            method: 'get',
-        })
-            /**
+* @see app/Http/Controllers/PatenRegistrationController.php:66
+* @route '/paten-registration/template-snapshot'
+*/
+templateSnapshotForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: templateSnapshot.url(options),
+    method: 'get',
+})
+
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::templateSnapshot
- * @see app/Http/Controllers/PatenRegistrationController.php:66
- * @route '/paten-registration/template-snapshot'
- */
-        templateSnapshotForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: templateSnapshot.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    templateSnapshot.form = templateSnapshotForm
+* @see app/Http/Controllers/PatenRegistrationController.php:66
+* @route '/paten-registration/template-snapshot'
+*/
+templateSnapshotForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    action: templateSnapshot.url({
+        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+            _method: 'HEAD',
+            ...(options?.query ?? options?.mergeQuery ?? {}),
+        }
+    }),
+    method: 'get',
+})
+
+templateSnapshot.form = templateSnapshotForm
+
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::store
- * @see app/Http/Controllers/PatenRegistrationController.php:87
- * @route '/paten-registration'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:87
+* @route '/paten-registration'
+*/
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(options),
     method: 'post',
@@ -250,49 +259,50 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::store
- * @see app/Http/Controllers/PatenRegistrationController.php:87
- * @route '/paten-registration'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:87
+* @route '/paten-registration'
+*/
 store.url = (options?: RouteQueryOptions) => {
     return store.definition.url + queryParams(options)
 }
 
 /**
 * @see \App\Http\Controllers\PatenRegistrationController::store
- * @see app/Http/Controllers/PatenRegistrationController.php:87
- * @route '/paten-registration'
- */
+* @see app/Http/Controllers/PatenRegistrationController.php:87
+* @route '/paten-registration'
+*/
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(options),
     method: 'post',
 })
 
-    /**
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::store
- * @see app/Http/Controllers/PatenRegistrationController.php:87
- * @route '/paten-registration'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
+* @see app/Http/Controllers/PatenRegistrationController.php:87
+* @route '/paten-registration'
+*/
+const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: store.url(options),
+    method: 'post',
+})
 
-            /**
+/**
 * @see \App\Http\Controllers\PatenRegistrationController::store
- * @see app/Http/Controllers/PatenRegistrationController.php:87
- * @route '/paten-registration'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
+* @see app/Http/Controllers/PatenRegistrationController.php:87
+* @route '/paten-registration'
+*/
+storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    action: store.url(options),
+    method: 'post',
+})
+
+store.form = storeForm
+
 const patenRegistration = {
     editor: Object.assign(editor, editor),
-template: Object.assign(template, template),
-templateSnapshot: Object.assign(templateSnapshot, templateSnapshot),
-store: Object.assign(store, store),
+    template: Object.assign(template, template),
+    templateSnapshot: Object.assign(templateSnapshot, templateSnapshot),
+    store: Object.assign(store, store),
 }
 
 export default patenRegistration

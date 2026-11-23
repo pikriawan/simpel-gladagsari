@@ -32,7 +32,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                     htmlFor="email"
                                     className="text-sm font-medium text-black"
                                 >
-                                    NIP
+                                    NIP atau email
                                 </Label>
                                 <Input
                                     id="email"
@@ -42,7 +42,7 @@ export default function Login({ status, canResetPassword }: Props) {
                                     autoFocus
                                     tabIndex={1}
                                     autoComplete="username"
-                                    placeholder="Masukkan NIP Anda"
+                                    placeholder="Masukkan NIP atau email Anda"
                                     className="h-[42px] rounded-[4px] border-[#CCCCCC] placeholder:text-[#999999] focus-visible:border-[#3489D2] focus-visible:ring-[#3489D2]/20"
                                 />
                                 <InputError message={errors.email} />
@@ -104,5 +104,5 @@ export default function Login({ status, canResetPassword }: Props) {
 
 Login.layout = {
     title: 'Login ke akun Anda',
-    description: 'Masukkan NIP dan password Anda di bawah ini untuk login.',
+    description: 'Masukkan NIP atau email dan password Anda di bawah ini untuk login.',
 };
