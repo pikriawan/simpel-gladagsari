@@ -66,10 +66,7 @@ const EMPTY_FORM = {
     partnerAddress: '',
 };
 
-import {
-    getAllSubvillagesList,
-    getAllVillagesList,
-} from '@/lib/village-data';
+import { getAllSubvillagesList, getAllVillagesList } from '@/lib/village-data';
 import { DEFAULT_TEMPLATE_SETTINGS } from '@/lib/template-settings';
 
 function recordToForm(record) {
@@ -129,6 +126,7 @@ export default function Editor({ record, templateSettings = {} }) {
     }));
     const [showErrors, setShowErrors] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [mobileTab, setMobileTab] = useState('form');
 
     const isFieldEmpty = useCallback(
         (key) => !form[key] || !String(form[key]).trim(),
@@ -171,7 +169,9 @@ export default function Editor({ record, templateSettings = {} }) {
         const emptyFields = REQUIRED_FIELDS.filter((key) => isFieldEmpty(key));
         if (emptyFields.length > 0) {
             setShowErrors(true);
-            const firstEl = document.querySelector(`[name="${emptyFields[0]}"]`);
+            const firstEl = document.querySelector(
+                `[name="${emptyFields[0]}"]`,
+            );
             firstEl?.focus();
             return;
         }
@@ -182,7 +182,8 @@ export default function Editor({ record, templateSettings = {} }) {
             onSuccess: async () => {
                 const rawNumber = (form.letterNumber || '').trim();
                 const fullLetterNumber = rawNumber
-                    ? rawNumber.includes('/6.20/') || rawNumber.startsWith('474.2/')
+                    ? rawNumber.includes('/6.20/') ||
+                      rawNumber.startsWith('474.2/')
                         ? rawNumber
                         : `474.2/${rawNumber}/6.20/${new Date().getFullYear()}`
                     : '';
@@ -231,7 +232,11 @@ export default function Editor({ record, templateSettings = {} }) {
     useEffect(() => {
         setLayoutProps({
             actions: (
-                <Button type="button" onClick={saveAndPrint} disabled={isSubmitting}>
+                <Button
+                    type="button"
+                    onClick={saveAndPrint}
+                    disabled={isSubmitting}
+                >
                     <Printer />
                     Simpan dan cetak
                 </Button>
@@ -246,9 +251,14 @@ export default function Editor({ record, templateSettings = {} }) {
         return {
             value: form[key],
             'aria-invalid': hasError,
-            className: hasError ? 'border-destructive focus-visible:ring-destructive/20' : '',
+            className: hasError
+                ? 'border-destructive focus-visible:ring-destructive/20'
+                : '',
             onChange: (event) =>
-                setForm((current) => ({ ...current, [key]: event.target.value })),
+                setForm((current) => ({
+                    ...current,
+                    [key]: event.target.value,
+                })),
         };
     };
 
@@ -256,9 +266,42 @@ export default function Editor({ record, templateSettings = {} }) {
         <>
             <Head title="Editor Surat Dispensasi Nikah" />
             <div className="w-full flex-1">
-                <div className="grid grid-cols-2 gap-4 p-4">
+                {/* Mobile View Toggle */}
+                <div className="p-3 pb-0 lg:hidden">
+                    <div className="flex rounded-lg border bg-muted p-1 text-muted-foreground">
+                        <button
+                            type="button"
+                            onClick={() => setMobileTab('form')}
+                            className={cn(
+                                'flex-1 rounded-md py-1.5 text-xs font-semibold transition-all',
+                                mobileTab === 'form'
+                                    ? 'bg-background text-foreground shadow-xs'
+                                    : 'hover:text-foreground',
+                            )}
+                        >
+                            Formulir Data
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMobileTab('preview')}
+                            className={cn(
+                                'flex-1 rounded-md py-1.5 text-xs font-semibold transition-all',
+                                mobileTab === 'preview'
+                                    ? 'bg-background text-foreground shadow-xs'
+                                    : 'hover:text-foreground',
+                            )}
+                        >
+                            Pratinjau Surat
+                        </button>
+                    </div>
+                </div>
+
+                <div className="pb-safe grid grid-cols-1 gap-4 p-3 sm:p-4 lg:grid-cols-2 print:block print:p-0 print:m-0">
                     <form
-                        className="flex flex-col gap-4"
+                        className={cn(
+                            'flex flex-col gap-4 pb-4',
+                            mobileTab === 'preview' && 'hidden lg:flex',
+                        )}
                         onSubmit={(event) => event.preventDefault()}
                     >
                         <FieldGroup>
@@ -267,7 +310,12 @@ export default function Editor({ record, templateSettings = {} }) {
                                     Nomor Surat dan Tanggal
                                 </FieldLegend>
                                 <FieldGroup>
-                                    <Field data-invalid={showErrors && isFieldEmpty('letterNumber')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty('letterNumber')
+                                        }
+                                    >
                                         <FieldLabel>Nomor urut</FieldLabel>
                                         <Input
                                             placeholder="Contoh: 1"
@@ -275,11 +323,19 @@ export default function Editor({ record, templateSettings = {} }) {
                                             name="letterNumber"
                                             {...bind('letterNumber')}
                                         />
-                                        {showErrors && isFieldEmpty('letterNumber') && (
-                                            <FieldError>Nomor urut wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty('letterNumber') && (
+                                                <FieldError>
+                                                    Nomor urut wajib diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
-                                    <Field data-invalid={showErrors && isFieldEmpty('village')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty('village')
+                                        }
+                                    >
                                         <FieldLabel>
                                             Nama desa pengantar
                                         </FieldLabel>
@@ -296,9 +352,13 @@ export default function Editor({ record, templateSettings = {} }) {
                                             <ComboboxInput
                                                 name="village"
                                                 placeholder="Pilih atau cari desa..."
-                                                aria-invalid={showErrors && isFieldEmpty('village')}
+                                                aria-invalid={
+                                                    showErrors &&
+                                                    isFieldEmpty('village')
+                                                }
                                                 className={
-                                                    showErrors && isFieldEmpty('village')
+                                                    showErrors &&
+                                                    isFieldEmpty('village')
                                                         ? 'border-destructive ring-destructive/20'
                                                         : ''
                                                 }
@@ -325,11 +385,22 @@ export default function Editor({ record, templateSettings = {} }) {
                                                 </ComboboxList>
                                             </ComboboxContent>
                                         </Combobox>
-                                        {showErrors && isFieldEmpty('village') && (
-                                            <FieldError>Nama desa pengantar wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty('village') && (
+                                                <FieldError>
+                                                    Nama desa pengantar wajib
+                                                    diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
-                                    <Field data-invalid={showErrors && isFieldEmpty('referenceLetterNumber')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty(
+                                                'referenceLetterNumber',
+                                            )
+                                        }
+                                    >
                                         <FieldLabel>
                                             Nomor surat pengantar
                                         </FieldLabel>
@@ -338,11 +409,22 @@ export default function Editor({ record, templateSettings = {} }) {
                                             name="referenceLetterNumber"
                                             {...bind('referenceLetterNumber')}
                                         />
-                                        {showErrors && isFieldEmpty('referenceLetterNumber') && (
-                                            <FieldError>Nomor surat pengantar wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty(
+                                                'referenceLetterNumber',
+                                            ) && (
+                                                <FieldError>
+                                                    Nomor surat pengantar wajib
+                                                    diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
-                                    <Field data-invalid={showErrors && isFieldEmpty('letterDate')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty('letterDate')
+                                        }
+                                    >
                                         <FieldLabel>
                                             Tanggal surat dikeluarkan
                                         </FieldLabel>
@@ -351,9 +433,13 @@ export default function Editor({ record, templateSettings = {} }) {
                                             name="letterDate"
                                             {...bind('letterDate')}
                                         />
-                                        {showErrors && isFieldEmpty('letterDate') && (
-                                            <FieldError>Tanggal surat dikeluarkan wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty('letterDate') && (
+                                                <FieldError>
+                                                    Tanggal surat dikeluarkan
+                                                    wajib diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
                                 </FieldGroup>
                             </FieldSet>
@@ -361,18 +447,33 @@ export default function Editor({ record, templateSettings = {} }) {
                             <FieldSet>
                                 <FieldLegend>Data Pemohon</FieldLegend>
                                 <FieldGroup>
-                                    <Field data-invalid={showErrors && isFieldEmpty('applicantName')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty('applicantName')
+                                        }
+                                    >
                                         <FieldLabel>Nama pemohon</FieldLabel>
                                         <Input
                                             placeholder="Contoh: Muhammad Rifqi Khoirurrozaq"
                                             name="applicantName"
                                             {...bind('applicantName')}
                                         />
-                                        {showErrors && isFieldEmpty('applicantName') && (
-                                            <FieldError>Nama pemohon wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty('applicantName') && (
+                                                <FieldError>
+                                                    Nama pemohon wajib diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
-                                    <Field data-invalid={showErrors && isFieldEmpty('applicantBirthPlaceDate')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty(
+                                                'applicantBirthPlaceDate',
+                                            )
+                                        }
+                                    >
                                         <FieldLabel>
                                             Tempat/tanggal lahir
                                         </FieldLabel>
@@ -381,11 +482,22 @@ export default function Editor({ record, templateSettings = {} }) {
                                             name="applicantBirthPlaceDate"
                                             {...bind('applicantBirthPlaceDate')}
                                         />
-                                        {showErrors && isFieldEmpty('applicantBirthPlaceDate') && (
-                                            <FieldError>Tempat/tanggal lahir pemohon wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty(
+                                                'applicantBirthPlaceDate',
+                                            ) && (
+                                                <FieldError>
+                                                    Tempat/tanggal lahir pemohon
+                                                    wajib diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
-                                    <Field data-invalid={showErrors && isFieldEmpty('subvillage')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty('subvillage')
+                                        }
+                                    >
                                         <FieldLabel>Dukuh</FieldLabel>
                                         <Combobox
                                             items={subVillages}
@@ -400,9 +512,13 @@ export default function Editor({ record, templateSettings = {} }) {
                                             <ComboboxInput
                                                 name="subvillage"
                                                 placeholder="Pilih atau cari dukuh..."
-                                                aria-invalid={showErrors && isFieldEmpty('subvillage')}
+                                                aria-invalid={
+                                                    showErrors &&
+                                                    isFieldEmpty('subvillage')
+                                                }
                                                 className={
-                                                    showErrors && isFieldEmpty('subvillage')
+                                                    showErrors &&
+                                                    isFieldEmpty('subvillage')
                                                         ? 'border-destructive ring-destructive/20'
                                                         : ''
                                                 }
@@ -430,32 +546,49 @@ export default function Editor({ record, templateSettings = {} }) {
                                                 </ComboboxList>
                                             </ComboboxContent>
                                         </Combobox>
-                                        {showErrors && isFieldEmpty('subvillage') && (
-                                            <FieldError>Dukuh pemohon wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty('subvillage') && (
+                                                <FieldError>
+                                                    Dukuh pemohon wajib diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <Field data-invalid={showErrors && isFieldEmpty('rt')}>
+                                        <Field
+                                            data-invalid={
+                                                showErrors && isFieldEmpty('rt')
+                                            }
+                                        >
                                             <FieldLabel>RT</FieldLabel>
                                             <Input
                                                 placeholder="Contoh: 001"
                                                 name="rt"
                                                 {...bind('rt')}
                                             />
-                                            {showErrors && isFieldEmpty('rt') && (
-                                                <FieldError>RT wajib diisi</FieldError>
-                                            )}
+                                            {showErrors &&
+                                                isFieldEmpty('rt') && (
+                                                    <FieldError>
+                                                        RT wajib diisi
+                                                    </FieldError>
+                                                )}
                                         </Field>
-                                        <Field data-invalid={showErrors && isFieldEmpty('rw')}>
+                                        <Field
+                                            data-invalid={
+                                                showErrors && isFieldEmpty('rw')
+                                            }
+                                        >
                                             <FieldLabel>RW</FieldLabel>
                                             <Input
                                                 placeholder="Contoh: 001"
                                                 name="rw"
                                                 {...bind('rw')}
                                             />
-                                            {showErrors && isFieldEmpty('rw') && (
-                                                <FieldError>RW wajib diisi</FieldError>
-                                            )}
+                                            {showErrors &&
+                                                isFieldEmpty('rw') && (
+                                                    <FieldError>
+                                                        RW wajib diisi
+                                                    </FieldError>
+                                                )}
                                         </Field>
                                     </div>
                                 </FieldGroup>
@@ -464,7 +597,12 @@ export default function Editor({ record, templateSettings = {} }) {
                             <FieldSet>
                                 <FieldLegend>Tanggal Pernikahan</FieldLegend>
                                 <FieldGroup>
-                                    <Field data-invalid={showErrors && isFieldEmpty('marriageDate')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty('marriageDate')
+                                        }
+                                    >
                                         <FieldLabel>
                                             Tanggal pernikahan
                                         </FieldLabel>
@@ -473,9 +611,13 @@ export default function Editor({ record, templateSettings = {} }) {
                                             name="marriageDate"
                                             {...bind('marriageDate')}
                                         />
-                                        {showErrors && isFieldEmpty('marriageDate') && (
-                                            <FieldError>Tanggal pernikahan wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty('marriageDate') && (
+                                                <FieldError>
+                                                    Tanggal pernikahan wajib
+                                                    diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
                                 </FieldGroup>
                             </FieldSet>
@@ -483,18 +625,33 @@ export default function Editor({ record, templateSettings = {} }) {
                             <FieldSet>
                                 <FieldLegend>Data Pasangan</FieldLegend>
                                 <FieldGroup>
-                                    <Field data-invalid={showErrors && isFieldEmpty('partnerName')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty('partnerName')
+                                        }
+                                    >
                                         <FieldLabel>Nama pasangan</FieldLabel>
                                         <Input
                                             placeholder="Contoh: Nem Painem"
                                             name="partnerName"
                                             {...bind('partnerName')}
                                         />
-                                        {showErrors && isFieldEmpty('partnerName') && (
-                                            <FieldError>Nama pasangan wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty('partnerName') && (
+                                                <FieldError>
+                                                    Nama pasangan wajib diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
-                                    <Field data-invalid={showErrors && isFieldEmpty('partnerBirthPlaceDate')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty(
+                                                'partnerBirthPlaceDate',
+                                            )
+                                        }
+                                    >
                                         <FieldLabel>
                                             Tempat/tanggal lahir
                                         </FieldLabel>
@@ -503,11 +660,22 @@ export default function Editor({ record, templateSettings = {} }) {
                                             name="partnerBirthPlaceDate"
                                             {...bind('partnerBirthPlaceDate')}
                                         />
-                                        {showErrors && isFieldEmpty('partnerBirthPlaceDate') && (
-                                            <FieldError>Tempat/tanggal lahir pasangan wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty(
+                                                'partnerBirthPlaceDate',
+                                            ) && (
+                                                <FieldError>
+                                                    Tempat/tanggal lahir
+                                                    pasangan wajib diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
-                                    <Field data-invalid={showErrors && isFieldEmpty('religion')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty('religion')
+                                        }
+                                    >
                                         <FieldLabel>Agama</FieldLabel>
                                         <Select
                                             name="religion"
@@ -523,11 +691,14 @@ export default function Editor({ record, templateSettings = {} }) {
                                                 className={cn(
                                                     'w-full',
                                                     showErrors &&
-                                                        isFieldEmpty('religion') &&
+                                                        isFieldEmpty(
+                                                            'religion',
+                                                        ) &&
                                                         'border-destructive ring-destructive/20',
                                                 )}
                                                 aria-invalid={
-                                                    showErrors && isFieldEmpty('religion')
+                                                    showErrors &&
+                                                    isFieldEmpty('religion')
                                                 }
                                             >
                                                 <SelectValue placeholder="Pilih agama" />
@@ -543,31 +714,44 @@ export default function Editor({ record, templateSettings = {} }) {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {showErrors && isFieldEmpty('religion') && (
-                                            <FieldError>Agama pasangan wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty('religion') && (
+                                                <FieldError>
+                                                    Agama pasangan wajib diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
-                                    <Field data-invalid={showErrors && isFieldEmpty('partnerAddress')}>
+                                    <Field
+                                        data-invalid={
+                                            showErrors &&
+                                            isFieldEmpty('partnerAddress')
+                                        }
+                                    >
                                         <FieldLabel>Alamat</FieldLabel>
                                         <Input
                                             placeholder="Contoh: Banjaran, RT001/RW001, Desa Candisari, Kec. Gladagsari"
                                             name="partnerAddress"
                                             {...bind('partnerAddress')}
                                         />
-                                        {showErrors && isFieldEmpty('partnerAddress') && (
-                                            <FieldError>Alamat pasangan wajib diisi</FieldError>
-                                        )}
+                                        {showErrors &&
+                                            isFieldEmpty('partnerAddress') && (
+                                                <FieldError>
+                                                    Alamat pasangan wajib diisi
+                                                </FieldError>
+                                            )}
                                     </Field>
                                 </FieldGroup>
                             </FieldSet>
                         </FieldGroup>
                     </form>
 
-                    <div className="min-h-0 sticky top-4 self-start">
-                        <LetterPreview
-                            form={form}
-                            template={template}
-                        />
+                    <div
+                        className={cn(
+                            'min-h-0 self-start lg:sticky lg:top-4 print:!block print:!static print:!w-full print:!m-0 print:!p-0',
+                            mobileTab === 'form' && 'hidden lg:block',
+                        )}
+                    >
+                        <LetterPreview form={form} template={template} />
                     </div>
                 </div>
             </div>

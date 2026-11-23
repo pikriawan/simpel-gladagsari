@@ -296,7 +296,14 @@ export default function DataDesaDukuh() {
                     {/* ── KOLOM DUKUH ──────────────────────────────────────── */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Dukuh</CardTitle>
+                            <CardTitle>
+                                Dukuh
+                                {selectedDesa && (
+                                    <span className="ml-2 text-sm font-normal text-muted-foreground lg:hidden">
+                                        — {selectedDesa.name}
+                                    </span>
+                                )}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-4">
                             <div className="flex gap-2">

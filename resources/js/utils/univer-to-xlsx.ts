@@ -16,22 +16,29 @@ import ExcelJS from 'exceljs';
 
 // ─── Enum values dari Univer (dari @univerjs/core) ───────────────────────────
 
-const HorizontalAlign = { UNSPECIFIED: 0, LEFT: 1, CENTER: 2, RIGHT: 3, JUSTIFIED: 4, DISTRIBUTED: 6 } as const;
-const VerticalAlign   = { UNSPECIFIED: 0, TOP: 1, MIDDLE: 2, BOTTOM: 3 } as const;
-const WrapStrategy    = { UNSPECIFIED: 0, OVERFLOW: 1, CLIP: 2, WRAP: 3 } as const;
-const BooleanNumber   = { FALSE: 0, TRUE: 1 } as const;
+const HorizontalAlign = {
+    UNSPECIFIED: 0,
+    LEFT: 1,
+    CENTER: 2,
+    RIGHT: 3,
+    JUSTIFIED: 4,
+    DISTRIBUTED: 6,
+} as const;
+const VerticalAlign = { UNSPECIFIED: 0, TOP: 1, MIDDLE: 2, BOTTOM: 3 } as const;
+const WrapStrategy = { UNSPECIFIED: 0, OVERFLOW: 1, CLIP: 2, WRAP: 3 } as const;
+const BooleanNumber = { FALSE: 0, TRUE: 1 } as const;
 
 // BorderStyleTypes → ExcelJS border style string
 const BORDER_STYLE_MAP: Partial<Record<number, ExcelJS.BorderStyle>> = {
-    1:  'thin',
-    2:  'hair',
-    3:  'dotted',
-    4:  'dashed',
-    5:  'dashDot',
-    6:  'dashDotDot',
-    7:  'double',
-    8:  'medium',
-    9:  'mediumDashed',
+    1: 'thin',
+    2: 'hair',
+    3: 'dotted',
+    4: 'dashed',
+    5: 'dashDot',
+    6: 'dashDotDot',
+    7: 'double',
+    8: 'medium',
+    9: 'mediumDashed',
     10: 'mediumDashDot',
     11: 'mediumDashDotDot',
     12: 'slantDashDot',
@@ -67,9 +74,13 @@ function toArgb(raw: any): string | undefined {
     }
 
     // "rgba(r, g, b, a)"
-    const matchA = val.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/i);
+    const matchA = val.match(
+        /rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/i,
+    );
     if (matchA) {
-        const a = Math.round(parseFloat(matchA[4]) * 255).toString(16).padStart(2, '0');
+        const a = Math.round(parseFloat(matchA[4]) * 255)
+            .toString(16)
+            .padStart(2, '0');
         const r = parseInt(matchA[1]).toString(16).padStart(2, '0');
         const g = parseInt(matchA[2]).toString(16).padStart(2, '0');
         const b = parseInt(matchA[3]).toString(16).padStart(2, '0');
@@ -127,38 +138,55 @@ function getCellBorderStyle(
 }
 
 /** Mapping HorizontalAlign Univer → ExcelJS alignment string. */
-function mapHAlign(ht: number | undefined): ExcelJS.Alignment['horizontal'] | undefined {
+function mapHAlign(
+    ht: number | undefined,
+): ExcelJS.Alignment['horizontal'] | undefined {
     switch (ht) {
-        case HorizontalAlign.LEFT:        return 'left';
-        case HorizontalAlign.CENTER:      return 'center';
-        case HorizontalAlign.RIGHT:       return 'right';
-        case HorizontalAlign.JUSTIFIED:   return 'justify';
-        case HorizontalAlign.DISTRIBUTED: return 'distributed';
-        default:                          return undefined;
+        case HorizontalAlign.LEFT:
+            return 'left';
+        case HorizontalAlign.CENTER:
+            return 'center';
+        case HorizontalAlign.RIGHT:
+            return 'right';
+        case HorizontalAlign.JUSTIFIED:
+            return 'justify';
+        case HorizontalAlign.DISTRIBUTED:
+            return 'distributed';
+        default:
+            return undefined;
     }
 }
 
 /** Mapping VerticalAlign Univer → ExcelJS alignment string. */
-function mapVAlign(vt: number | undefined): ExcelJS.Alignment['vertical'] | undefined {
+function mapVAlign(
+    vt: number | undefined,
+): ExcelJS.Alignment['vertical'] | undefined {
     switch (vt) {
-        case VerticalAlign.TOP:    return 'top';
-        case VerticalAlign.MIDDLE: return 'middle';
-        case VerticalAlign.BOTTOM: return 'bottom';
-        default:                   return undefined;
+        case VerticalAlign.TOP:
+            return 'top';
+        case VerticalAlign.MIDDLE:
+            return 'middle';
+        case VerticalAlign.BOTTOM:
+            return 'bottom';
+        default:
+            return undefined;
     }
 }
 
 // ─── Main converter ───────────────────────────────────────────────────────────
 
-export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Workbook> {
+export async function univerSnapshotToExcelJS(
+    snapshot: any,
+): Promise<ExcelJS.Workbook> {
     const wb = new ExcelJS.Workbook();
-    wb.creator  = 'Simpel Gladagsari';
+    wb.creator = 'Simpel Gladagsari';
     wb.lastModifiedBy = 'Simpel Gladagsari';
-    wb.created  = new Date();
+    wb.created = new Date();
     wb.modified = new Date();
 
     const stylesMap: Record<string, any> = snapshot.styles ?? {};
-    const sheetOrder: string[] = snapshot.sheetOrder ?? Object.keys(snapshot.sheets ?? {});
+    const sheetOrder: string[] =
+        snapshot.sheetOrder ?? Object.keys(snapshot.sheets ?? {});
 
     for (const sheetId of sheetOrder) {
         const sheetData = snapshot.sheets?.[sheetId];
@@ -167,24 +195,36 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
         const ws = wb.addWorksheet(sheetData.name ?? sheetId);
 
         // ── 0. Freeze panes ───────────────────────────────────────────────────
-        if (sheetData.freeze && (sheetData.freeze.ySplit > 0 || sheetData.freeze.xSplit > 0)) {
+        if (
+            sheetData.freeze &&
+            (sheetData.freeze.ySplit > 0 || sheetData.freeze.xSplit > 0)
+        ) {
             ws.views = [
                 {
                     state: 'frozen',
-                    xSplit: sheetData.freeze.xSplit > 0 ? sheetData.freeze.xSplit : 0,
-                    ySplit: sheetData.freeze.ySplit > 0 ? sheetData.freeze.ySplit : 0,
+                    xSplit:
+                        sheetData.freeze.xSplit > 0
+                            ? sheetData.freeze.xSplit
+                            : 0,
+                    ySplit:
+                        sheetData.freeze.ySplit > 0
+                            ? sheetData.freeze.ySplit
+                            : 0,
                 },
             ];
         }
 
-        const cellData: Record<number, Record<number, any>> = sheetData.cellData ?? {};
+        const cellData: Record<
+            number,
+            Record<number, any>
+        > = sheetData.cellData ?? {};
         const columnData: Record<number, any> = sheetData.columnData ?? {};
-        const rowData: Record<number, any>    = sheetData.rowData ?? {};
-        const mergeData: any[]                = sheetData.mergeData ?? [];
-        const defaultColWidth: number         = sheetData.defaultColumnWidth ?? 88;
-        const defaultRowHeight: number        = sheetData.defaultRowHeight ?? 19;
+        const rowData: Record<number, any> = sheetData.rowData ?? {};
+        const mergeData: any[] = sheetData.mergeData ?? [];
+        const defaultColWidth: number = sheetData.defaultColumnWidth ?? 88;
+        const defaultRowHeight: number = sheetData.defaultRowHeight ?? 19;
 
-        const rowCount: number    = sheetData.rowCount ?? 100;
+        const rowCount: number = sheetData.rowCount ?? 100;
         const columnCount: number = sheetData.columnCount ?? 20;
 
         // ── 1. Lebar kolom ───────────────────────────────────────────────────
@@ -201,8 +241,12 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             const rInfo = rowData[r];
 
             if (rInfo) {
-                const heightPx = rInfo.ia === BooleanNumber.TRUE ? (rInfo.ah ?? rInfo.h) : rInfo.h;
-                if (heightPx != null) excelRow.height = pxToPt(heightPx, defaultRowHeight);
+                const heightPx =
+                    rInfo.ia === BooleanNumber.TRUE
+                        ? (rInfo.ah ?? rInfo.h)
+                        : rInfo.h;
+                if (heightPx != null)
+                    excelRow.height = pxToPt(heightPx, defaultRowHeight);
                 if (rInfo.hd === BooleanNumber.TRUE) excelRow.hidden = true;
             }
 
@@ -235,7 +279,7 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
                 const bgArgb = toArgb(style.bg?.rgb);
                 if (bgArgb) {
                     excelCell.fill = {
-                        type:    'pattern',
+                        type: 'pattern',
                         pattern: 'solid',
                         fgColor: { argb: bgArgb },
                     };
@@ -244,26 +288,28 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
                 // Font
                 const fontColor = toArgb(style.cl?.rgb);
                 const font: Partial<ExcelJS.Font> = {};
-                if (style.ff)                           font.name      = style.ff;
-                if (style.fs != null)                   font.size      = style.fs;
-                if (style.bl === BooleanNumber.TRUE)     font.bold      = true;
-                if (style.it === BooleanNumber.TRUE)     font.italic    = true;
-                if (style.ul?.s === BooleanNumber.TRUE)  font.underline = true;
-                if (style.st?.s === BooleanNumber.TRUE)  font.strike    = true;
-                if (fontColor)                           font.color     = { argb: fontColor };
-                if (Object.keys(font).length > 0) excelCell.font = font as ExcelJS.Font;
+                if (style.ff) font.name = style.ff;
+                if (style.fs != null) font.size = style.fs;
+                if (style.bl === BooleanNumber.TRUE) font.bold = true;
+                if (style.it === BooleanNumber.TRUE) font.italic = true;
+                if (style.ul?.s === BooleanNumber.TRUE) font.underline = true;
+                if (style.st?.s === BooleanNumber.TRUE) font.strike = true;
+                if (fontColor) font.color = { argb: fontColor };
+                if (Object.keys(font).length > 0)
+                    excelCell.font = font as ExcelJS.Font;
 
                 // Alignment
                 const alignment: Partial<ExcelJS.Alignment> = {};
                 const hAlign = mapHAlign(style.ht);
                 const vAlign = mapVAlign(style.vt);
                 if (hAlign) alignment.horizontal = hAlign;
-                if (vAlign) alignment.vertical   = vAlign;
+                if (vAlign) alignment.vertical = vAlign;
                 if (style.tb === WrapStrategy.WRAP) alignment.wrapText = true;
                 if (style.tr?.a != null && style.tr.a !== 0) {
                     alignment.textRotation = style.tr.a;
                 }
-                if (Object.keys(alignment).length > 0) excelCell.alignment = alignment as ExcelJS.Alignment;
+                if (Object.keys(alignment).length > 0)
+                    excelCell.alignment = alignment as ExcelJS.Alignment;
 
                 // Border
                 const bd = style.bd;
@@ -273,11 +319,12 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
                     const r = buildBorderSide(bd.r);
                     const b = buildBorderSide(bd.b);
                     const l = buildBorderSide(bd.l);
-                    if (t) border.top    = t;
-                    if (r) border.right  = r;
+                    if (t) border.top = t;
+                    if (r) border.right = r;
                     if (b) border.bottom = b;
-                    if (l) border.left   = l;
-                    if (Object.keys(border).length > 0) excelCell.border = border as ExcelJS.Borders;
+                    if (l) border.left = l;
+                    if (Object.keys(border).length > 0)
+                        excelCell.border = border as ExcelJS.Borders;
                 }
 
                 // Number format
@@ -291,9 +338,9 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
         // mergeData: IRange[] → { startRow, startColumn, endRow, endColumn }
         for (const merge of mergeData) {
             const startRow = Math.min(merge.startRow, merge.endRow);
-            const endRow   = Math.max(merge.startRow, merge.endRow);
+            const endRow = Math.max(merge.startRow, merge.endRow);
             const startCol = Math.min(merge.startColumn, merge.endColumn);
-            const endCol   = Math.max(merge.startColumn, merge.endColumn);
+            const endCol = Math.max(merge.startColumn, merge.endColumn);
 
             // 1. Top border:
             // a. Cek sepanjang baris teratas merge range (startRow, startCol..endCol)
@@ -306,7 +353,12 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             // b. Fallback: cek sel tepat di atas merge range (startRow - 1, startCol..endCol) yang punya border bottom
             if (!topBorder && startRow > 0) {
                 for (let c = startCol; c <= endCol; c++) {
-                    const bd = getCellBorderStyle(cellData, stylesMap, startRow - 1, c);
+                    const bd = getCellBorderStyle(
+                        cellData,
+                        stylesMap,
+                        startRow - 1,
+                        c,
+                    );
                     topBorder = buildBorderSide(bd?.b);
                     if (topBorder) break;
                 }
@@ -328,7 +380,12 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             if (!topBorder) {
                 for (let r = startRow; r <= endRow && !topBorder; r++) {
                     for (let c = startCol; c <= endCol; c++) {
-                        const bd = getCellBorderStyle(cellData, stylesMap, r, c);
+                        const bd = getCellBorderStyle(
+                            cellData,
+                            stylesMap,
+                            r,
+                            c,
+                        );
                         topBorder = buildBorderSide(bd?.t);
                         if (topBorder) break;
                     }
@@ -346,7 +403,12 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             // b. Fallback: cek sel tepat di bawah merge range (endRow + 1, startCol..endCol) yang punya border top
             if (!bottomBorder) {
                 for (let c = startCol; c <= endCol; c++) {
-                    const bd = getCellBorderStyle(cellData, stylesMap, endRow + 1, c);
+                    const bd = getCellBorderStyle(
+                        cellData,
+                        stylesMap,
+                        endRow + 1,
+                        c,
+                    );
                     bottomBorder = buildBorderSide(bd?.t);
                     if (bottomBorder) break;
                 }
@@ -366,14 +428,24 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             }
             // d. Fallback: cek master cell jika ada border bottom
             if (!bottomBorder) {
-                const bd = getCellBorderStyle(cellData, stylesMap, startRow, startCol);
+                const bd = getCellBorderStyle(
+                    cellData,
+                    stylesMap,
+                    startRow,
+                    startCol,
+                );
                 bottomBorder = buildBorderSide(bd?.b);
             }
             // e. Fallback: scan seluruh sel di merge range
             if (!bottomBorder) {
                 for (let r = endRow; r >= startRow && !bottomBorder; r--) {
                     for (let c = startCol; c <= endCol; c++) {
-                        const bd = getCellBorderStyle(cellData, stylesMap, r, c);
+                        const bd = getCellBorderStyle(
+                            cellData,
+                            stylesMap,
+                            r,
+                            c,
+                        );
                         bottomBorder = buildBorderSide(bd?.b);
                         if (bottomBorder) break;
                     }
@@ -391,7 +463,12 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             // b. Fallback: cek sel tepat di sebelah kiri merge range (r, startCol - 1) yang punya border right
             if (!leftBorder && startCol > 0) {
                 for (let r = startRow; r <= endRow; r++) {
-                    const bd = getCellBorderStyle(cellData, stylesMap, r, startCol - 1);
+                    const bd = getCellBorderStyle(
+                        cellData,
+                        stylesMap,
+                        r,
+                        startCol - 1,
+                    );
                     leftBorder = buildBorderSide(bd?.r);
                     if (leftBorder) break;
                 }
@@ -413,7 +490,12 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             if (!leftBorder) {
                 for (let c = startCol; c <= endCol && !leftBorder; c++) {
                     for (let r = startRow; r <= endRow; r++) {
-                        const bd = getCellBorderStyle(cellData, stylesMap, r, c);
+                        const bd = getCellBorderStyle(
+                            cellData,
+                            stylesMap,
+                            r,
+                            c,
+                        );
                         leftBorder = buildBorderSide(bd?.l);
                         if (leftBorder) break;
                     }
@@ -431,7 +513,12 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             // b. Fallback: cek sel tepat di sebelah kanan merge range (r, endCol + 1) yang punya border left
             if (!rightBorder) {
                 for (let r = startRow; r <= endRow; r++) {
-                    const bd = getCellBorderStyle(cellData, stylesMap, r, endCol + 1);
+                    const bd = getCellBorderStyle(
+                        cellData,
+                        stylesMap,
+                        r,
+                        endCol + 1,
+                    );
                     rightBorder = buildBorderSide(bd?.l);
                     if (rightBorder) break;
                 }
@@ -453,7 +540,12 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             if (!rightBorder) {
                 for (let c = endCol; c >= startCol && !rightBorder; c--) {
                     for (let r = startRow; r <= endRow; r++) {
-                        const bd = getCellBorderStyle(cellData, stylesMap, r, c);
+                        const bd = getCellBorderStyle(
+                            cellData,
+                            stylesMap,
+                            r,
+                            c,
+                        );
                         rightBorder = buildBorderSide(bd?.r);
                         if (rightBorder) break;
                     }
@@ -477,12 +569,17 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
                                 masterCell.value = plainText;
                                 break;
                             }
-                        } else if (slaveInfo.v !== undefined && slaveInfo.v !== null && slaveInfo.v !== '') {
+                        } else if (
+                            slaveInfo.v !== undefined &&
+                            slaveInfo.v !== null &&
+                            slaveInfo.v !== ''
+                        ) {
                             masterCell.value = slaveInfo.v;
                             break;
                         }
                     }
-                    if (masterCell.value != null && masterCell.value !== '') break;
+                    if (masterCell.value != null && masterCell.value !== '')
+                        break;
                 }
             }
 
@@ -506,7 +603,8 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
             }
 
             // Mewarisi alignment jika belum lengkap (misal merge-and-center)
-            const curAlign = (masterCell.alignment || {}) as Partial<ExcelJS.Alignment>;
+            const curAlign = (masterCell.alignment ||
+                {}) as Partial<ExcelJS.Alignment>;
             let alignChanged = false;
             if (!curAlign.horizontal || !curAlign.vertical) {
                 for (let r = startRow; r <= endRow; r++) {
@@ -536,17 +634,22 @@ export async function univerSnapshotToExcelJS(snapshot: any): Promise<ExcelJS.Wo
 
             const existingBorder = masterCell.border || {};
             const newBorder: Partial<ExcelJS.Borders> = { ...existingBorder };
-            if (topBorder)    newBorder.top    = topBorder;
+            if (topBorder) newBorder.top = topBorder;
             if (bottomBorder) newBorder.bottom = bottomBorder;
-            if (leftBorder)   newBorder.left   = leftBorder;
-            if (rightBorder)  newBorder.right  = rightBorder;
+            if (leftBorder) newBorder.left = leftBorder;
+            if (rightBorder) newBorder.right = rightBorder;
 
             if (Object.keys(newBorder).length > 0) {
                 masterCell.border = newBorder as ExcelJS.Borders;
             }
 
             try {
-                ws.mergeCells(startRow + 1, startCol + 1, endRow + 1, endCol + 1);
+                ws.mergeCells(
+                    startRow + 1,
+                    startCol + 1,
+                    endRow + 1,
+                    endCol + 1,
+                );
             } catch {
                 // abaikan merge yang tumpang tindih
             }
@@ -578,4 +681,3 @@ function extractPlainText(doc: any): string {
         return '';
     }
 }
-

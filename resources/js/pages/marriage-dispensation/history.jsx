@@ -1,7 +1,26 @@
-import { Head, router, setLayoutProps, resetLayoutProps } from '@inertiajs/react';
+import {
+    Head,
+    router,
+    setLayoutProps,
+    resetLayoutProps,
+} from '@inertiajs/react';
 import { useEffect, useState, useCallback } from 'react';
-import { Eye, Trash2, FileSpreadsheet, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Upload } from 'lucide-react';
-import { editor, history, loadToEditor, destroy as destroyRoute } from '@/routes/marriage-dispensation';
+import {
+    Eye,
+    Trash2,
+    FileSpreadsheet,
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+    Upload,
+} from 'lucide-react';
+import {
+    editor,
+    history,
+    loadToEditor,
+    destroy as destroyRoute,
+} from '@/routes/marriage-dispensation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -99,13 +118,32 @@ function DetailModal({ record, open, onClose, onDelete, onLoadToEditor }) {
 
                 {/* Nomor Surat dan Tanggal */}
                 <section>
-                    <h3 className="mb-1 text-sm font-semibold">Nomor Surat dan Tanggal</h3>
+                    <h3 className="mb-1 text-sm font-semibold">
+                        Nomor Surat dan Tanggal
+                    </h3>
                     <div className="divide-y">
-                        <DetailRow label="Nomor urut" value={record.letter_number} />
-                        <DetailRow label="Nama desa pengantar" value={record.village ?? record.village_name} />
-                        <DetailRow label="Nomor surat pengantar" value={record.reference_letter_number} />
-                        <DetailRow label="Tanggal surat dikeluarkan" value={formatDate(record.letter_date)} />
-                        <DetailRow label="Terakhir diubah" value={formatDateTime(record.updated_at ?? record.created_at)} />
+                        <DetailRow
+                            label="Nomor urut"
+                            value={record.letter_number}
+                        />
+                        <DetailRow
+                            label="Nama desa pengantar"
+                            value={record.village ?? record.village_name}
+                        />
+                        <DetailRow
+                            label="Nomor surat pengantar"
+                            value={record.reference_letter_number}
+                        />
+                        <DetailRow
+                            label="Tanggal surat dikeluarkan"
+                            value={formatDate(record.letter_date)}
+                        />
+                        <DetailRow
+                            label="Terakhir diubah"
+                            value={formatDateTime(
+                                record.updated_at ?? record.created_at,
+                            )}
+                        />
                     </div>
                 </section>
 
@@ -113,32 +151,54 @@ function DetailModal({ record, open, onClose, onDelete, onLoadToEditor }) {
                 <section>
                     <h3 className="mb-1 text-sm font-semibold">Data Pemohon</h3>
                     <div className="divide-y">
-                        <DetailRow label="Nama pemohon" value={record.applicant_name} />
-                        <DetailRow label="Tempat/tanggal lahir" value={record.applicant_birth_place_date} />
+                        <DetailRow
+                            label="Nama pemohon"
+                            value={record.applicant_name}
+                        />
+                        <DetailRow
+                            label="Tempat/tanggal lahir"
+                            value={record.applicant_birth_place_date}
+                        />
                         <DetailRow label="Alamat" value={applicantAddress} />
                     </div>
                 </section>
 
                 {/* Tanggal Pernikahan */}
                 <section>
-                    <h3 className="mb-1 text-sm font-semibold">Tanggal Pernikahan</h3>
+                    <h3 className="mb-1 text-sm font-semibold">
+                        Tanggal Pernikahan
+                    </h3>
                     <div className="divide-y">
-                        <DetailRow label="Tanggal pernikahan di KUA" value={formatDate(record.marriage_date)} />
+                        <DetailRow
+                            label="Tanggal pernikahan di KUA"
+                            value={formatDate(record.marriage_date)}
+                        />
                     </div>
                 </section>
 
                 {/* Data Pasangan */}
                 <section>
-                    <h3 className="mb-1 text-sm font-semibold">Data Pasangan</h3>
+                    <h3 className="mb-1 text-sm font-semibold">
+                        Data Pasangan
+                    </h3>
                     <div className="divide-y">
-                        <DetailRow label="Nama pasangan" value={record.partner_name} />
-                        <DetailRow label="Tempat/tanggal lahir" value={record.partner_birth_place_date} />
+                        <DetailRow
+                            label="Nama pasangan"
+                            value={record.partner_name}
+                        />
+                        <DetailRow
+                            label="Tempat/tanggal lahir"
+                            value={record.partner_birth_place_date}
+                        />
                         <DetailRow label="Agama" value={record.religion} />
-                        <DetailRow label="Alamat" value={record.partner_address} />
+                        <DetailRow
+                            label="Alamat"
+                            value={record.partner_address}
+                        />
                     </div>
                 </section>
 
-                <DialogFooter className="flex-row items-center gap-2 sm:justify-between">
+                <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
                     <Button variant="outline" onClick={onClose}>
                         Tutup
                     </Button>
@@ -193,7 +253,8 @@ export default function Riwayat({ records, filters }) {
     const handleDelete = (record) => {
         const target = record ?? selectedRecord;
         if (!target) return;
-        if (!window.confirm(`Hapus riwayat surat "${target.letter_number}"?`)) return;
+        if (!window.confirm(`Hapus riwayat surat "${target.letter_number}"?`))
+            return;
         setSelectedRecord(null);
         router.delete(destroyRoute(target.id).url, { preserveScroll: true });
     };
@@ -211,7 +272,8 @@ export default function Riwayat({ records, filters }) {
         if (from) params.set('from', from);
         if (to) params.set('to', to);
         const qs = params.toString();
-        window.location.href = '/marriage-dispensation/export' + (qs ? '?' + qs : '');
+        window.location.href =
+            '/marriage-dispensation/export' + (qs ? '?' + qs : '');
     };
 
     const goToPage = (url) => {
@@ -258,48 +320,68 @@ export default function Riwayat({ records, filters }) {
         <>
             <Head title="Riwayat Surat Dispensasi Nikah" />
 
-            <div className="flex h-full w-full flex-1 flex-col gap-4 p-4">
+            <div className="flex h-full w-full flex-1 flex-col gap-4 p-3 sm:p-4">
                 {/* Filters */}
-                <div className="flex flex-wrap items-end gap-3">
-                    <div className="flex min-w-48 flex-1 flex-col gap-1.5">
-                        <label className="text-sm font-medium text-foreground">Cari</label>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                        <label className="text-sm font-medium text-foreground">
+                            Cari
+                        </label>
                         <Input
                             placeholder="Kata kunci..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                         />
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-foreground">Dari</label>
-                        <Input
-                            type="date"
-                            className="w-44"
-                            value={from}
-                            onChange={(e) => setFrom(e.target.value)}
-                        />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                        <label className="text-sm font-medium text-foreground">Hingga</label>
-                        <Input
-                            type="date"
-                            className="w-44"
-                            value={to}
-                            onChange={(e) => setTo(e.target.value)}
-                        />
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end">
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-medium text-foreground">
+                                Dari
+                            </label>
+                            <Input
+                                type="date"
+                                className="w-full sm:w-44"
+                                value={from}
+                                onChange={(e) => setFrom(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                            <label className="text-sm font-medium text-foreground">
+                                Hingga
+                            </label>
+                            <Input
+                                type="date"
+                                className="w-full sm:w-44"
+                                value={to}
+                                onChange={(e) => setTo(e.target.value)}
+                            />
+                        </div>
                     </div>
                 </div>
 
                 {/* Table */}
-                <div className="rounded-md border">
+                <div className="overflow-x-auto rounded-md border">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Nomor surat</TableHead>
-                                <TableHead>Pemohon</TableHead>
-                                <TableHead>Pasangan</TableHead>
-                                <TableHead>Tanggal pernikahan</TableHead>
-                                <TableHead>Desa asal</TableHead>
-                                <TableHead>Terakhir diubah</TableHead>
+                                <TableHead className="whitespace-nowrap">
+                                    Nomor surat
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">
+                                    Pemohon
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">
+                                    Pasangan
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">
+                                    Tgl nikah
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">
+                                    Desa
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">
+                                    Diubah
+                                </TableHead>
                                 <TableHead className="w-16" />
                             </TableRow>
                         </TableHeader>
@@ -307,15 +389,28 @@ export default function Riwayat({ records, filters }) {
                             {data && data.length > 0 ? (
                                 data.map((record) => (
                                     <TableRow key={record.id}>
-                                        <TableCell>
+                                        <TableCell className="whitespace-nowrap">
                                             {record.letter_number ?? '-'}
                                         </TableCell>
-                                        <TableCell>{record.applicant_name ?? '-'}</TableCell>
-                                        <TableCell>{record.partner_name ?? '-'}</TableCell>
-                                        <TableCell>{formatDate(record.marriage_date)}</TableCell>
-                                        <TableCell>{record.village ?? record.village_name ?? '-'}</TableCell>
-                                        <TableCell className="text-xs text-muted-foreground">
-                                            {formatDateTime(record.updated_at ?? record.created_at)}
+                                        <TableCell className="whitespace-nowrap">
+                                            {record.applicant_name ?? '-'}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap">
+                                            {record.partner_name ?? '-'}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap">
+                                            {formatDate(record.marriage_date)}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap">
+                                            {record.village ??
+                                                record.village_name ??
+                                                '-'}
+                                        </TableCell>
+                                        <TableCell className="text-xs whitespace-nowrap text-muted-foreground">
+                                            {formatDateTime(
+                                                record.updated_at ??
+                                                    record.created_at,
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-1">
@@ -323,7 +418,11 @@ export default function Riwayat({ records, filters }) {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                    onClick={() => setSelectedRecord(record)}
+                                                    onClick={() =>
+                                                        setSelectedRecord(
+                                                            record,
+                                                        )
+                                                    }
                                                     title="Lihat detail"
                                                 >
                                                     <Eye className="size-4" />
@@ -332,7 +431,9 @@ export default function Riwayat({ records, filters }) {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                                    onClick={() => handleDelete(record)}
+                                                    onClick={() =>
+                                                        handleDelete(record)
+                                                    }
                                                     title="Hapus"
                                                 >
                                                     <Trash2 className="size-4" />
@@ -357,7 +458,7 @@ export default function Riwayat({ records, filters }) {
 
                 {/* Pagination */}
                 {records && last_page > 1 && (
-                    <div className="flex items-center justify-center gap-1">
+                    <div className="flex items-center justify-center gap-1 overflow-x-auto py-2">
                         <PaginationButton
                             onClick={() => goToPage(first_page_url)}
                             disabled={current_page === 1}

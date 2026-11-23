@@ -6,15 +6,7 @@ export function fmtDate(iso) {
     return `${d}/${m}/${y}`;
 }
 
-const HARI = [
-    'Minggu',
-    'Senin',
-    'Selasa',
-    'Rabu',
-    'Kamis',
-    'Jumat',
-    'Sabtu',
-];
+const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const BULAN = [
     'Januari',
     'Februari',
@@ -40,7 +32,9 @@ export function fmtDateIndo(val) {
     } else {
         const dt = new Date(val);
         if (isNaN(dt.getTime())) return val;
-        y = dt.getFullYear(); m = dt.getMonth() + 1; d = dt.getDate();
+        y = dt.getFullYear();
+        m = dt.getMonth() + 1;
+        d = dt.getDate();
     }
     return `${d} ${BULAN[m - 1]} ${y}`;
 }

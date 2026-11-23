@@ -82,10 +82,10 @@ export default function ManageTwoFactor(props: Props) {
             ) : (
                 <div className="flex flex-col items-start justify-start space-y-4">
                     <p className="text-sm text-muted-foreground">
-                        Saat Anda mengaktifkan autentikasi dua faktor, Anda
-                        akan diminta memasukkan PIN aman saat masuk. PIN ini
-                        dapat diambil dari aplikasi yang mendukung TOTP di
-                        ponsel Anda.
+                        Saat Anda mengaktifkan autentikasi dua faktor, Anda akan
+                        diminta memasukkan PIN aman saat masuk. PIN ini dapat
+                        diambil dari aplikasi yang mendukung TOTP di ponsel
+                        Anda.
                     </p>
 
                     <div>

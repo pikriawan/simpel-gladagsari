@@ -89,14 +89,15 @@ export default function Profile({
                                 auth.user.email_verified_at === null && (
                                     <div>
                                         <p className="-mt-4 text-sm text-muted-foreground">
-                                            Alamat email Anda belum terverifikasi.{' '}
+                                            Alamat email Anda belum
+                                            terverifikasi.{' '}
                                             <Link
                                                 href={send()}
                                                 as="button"
                                                 className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
                                             >
-                                                Klik di sini untuk mengirim ulang
-                                                email verifikasi.
+                                                Klik di sini untuk mengirim
+                                                ulang email verifikasi.
                                             </Link>
                                         </p>
 

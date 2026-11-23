@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { fmtDate, fmtDateDay, fmtDateIndo } from '@/lib/format';
+import { fmtDateDay, fmtDateIndo } from '@/lib/format';
 
 const DEFAULT_TEMPLATE = {
     version: 8,
@@ -88,7 +88,8 @@ export default function LetterPreview({
     const logo = '/assets/boyolali.png';
     const emailMatch = headerLines[3].match(/^(.*?\bemail:\s*)([^\s,]+)(.*)$/i);
     const applicantSubvillage = (form.subvillage || '').split(',')[0].trim();
-    const applicantVillage = (form.subvillage || '').split(',')[1]?.trim() || '';
+    const applicantVillage =
+        (form.subvillage || '').split(',')[1]?.trim() || '';
     const applicantAddress = [
         applicantSubvillage || '..........',
         `RT ${form.rt || '000'}/RW ${form.rw || '000'}`,

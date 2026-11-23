@@ -26,7 +26,12 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                 {({ processing, errors }) => (
                     <div className="grid gap-5">
                         <div className="grid gap-2">
-                            <Label htmlFor="email" className="text-sm font-medium text-black">Email</Label>
+                            <Label
+                                htmlFor="email"
+                                className="text-sm font-medium text-black"
+                            >
+                                Email
+                            </Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -43,7 +48,12 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password" className="text-sm font-medium text-black">Password Baru</Label>
+                            <Label
+                                htmlFor="password"
+                                className="text-sm font-medium text-black"
+                            >
+                                Password Baru
+                            </Label>
                             <PasswordInput
                                 id="password"
                                 name="password"
@@ -57,7 +67,10 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password_confirmation" className="text-sm font-medium text-black">
+                            <Label
+                                htmlFor="password_confirmation"
+                                className="text-sm font-medium text-black"
+                            >
                                 Konfirmasi Password
                             </Label>
                             <PasswordInput
@@ -76,7 +89,7 @@ export default function ResetPassword({ token, email, passwordRules }: Props) {
 
                         <Button
                             type="submit"
-                            className="mt-2 w-full h-[42px] rounded-[4px] bg-[#3489D2] hover:bg-[#2c76b5] text-white font-medium shadow-none"
+                            className="mt-2 h-[42px] w-full rounded-[4px] bg-[#3489D2] font-medium text-white shadow-none hover:bg-[#2c76b5]"
                             disabled={processing}
                             data-test="reset-password-button"
                         >

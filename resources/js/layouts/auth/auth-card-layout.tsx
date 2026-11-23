@@ -23,7 +23,7 @@ export default function AuthCardLayout({
             <div className="flex w-full max-w-md flex-col gap-6">
                 <Link
                     href={home()}
-                    className="self-center font-bold text-2xl tracking-tight text-neutral-900 dark:text-white"
+                    className="self-center text-2xl font-bold tracking-tight text-neutral-900 dark:text-white"
                 >
                     Simpel
                 </Link>

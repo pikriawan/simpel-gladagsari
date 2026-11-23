@@ -207,67 +207,100 @@ export default function UserManager({ users }) {
     return (
         <>
             <Head title="Users" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-3 sm:p-4">
                 <div className="flex">
-                    <Button onClick={openCreateDialog}>
-                        <UserPlus />
+                    <Button
+                        onClick={openCreateDialog}
+                        className="w-full sm:w-auto"
+                    >
+                        <UserPlus className="size-4" />
                         Tambah pegawai baru
                     </Button>
                 </div>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Pegawai</TableHead>
-                            <TableHead>NIP</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Role</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Aksi</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {users.map((user) => (
-                            <TableRow key={user.id}>
-                                <TableCell>{user.name}</TableCell>
-                                <TableCell>{user.nip || '-'}</TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>{user.role}</TableCell>
-                                <TableCell>{user.status}</TableCell>
-                                <TableCell className="flex justify-end gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        disabled={user.role === 'administrator'}
-                                        onClick={() =>
-                                            openTwoFactorDialog(user)
-                                        }
-                                    >
-                                        <ShieldCheck />
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        onClick={() => openEditDialog(user)}
-                                    >
-                                        <SquarePen />
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        disabled={user.role === 'administrator'}
-                                        onClick={() => setUserToDelete(user)}
-                                    >
-                                        <Trash stroke="#FF2400" />
-                                    </Button>
-                                </TableCell>
+                <div className="overflow-x-auto rounded-md border">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="whitespace-nowrap">
+                                    Pegawai
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">
+                                    NIP
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">
+                                    Email
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">
+                                    Role
+                                </TableHead>
+                                <TableHead className="whitespace-nowrap">
+                                    Status
+                                </TableHead>
+                                <TableHead className="text-right whitespace-nowrap">
+                                    Aksi
+                                </TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {users.map((user) => (
+                                <TableRow key={user.id}>
+                                    <TableCell className="font-medium whitespace-nowrap">
+                                        {user.name}
+                                    </TableCell>
+                                    <TableCell className="whitespace-nowrap">
+                                        {user.nip || '-'}
+                                    </TableCell>
+                                    <TableCell className="whitespace-nowrap">
+                                        {user.email}
+                                    </TableCell>
+                                    <TableCell className="whitespace-nowrap">
+                                        {user.role}
+                                    </TableCell>
+                                    <TableCell className="whitespace-nowrap">
+                                        {user.status}
+                                    </TableCell>
+                                    <TableCell className="flex justify-end gap-2 whitespace-nowrap">
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            disabled={
+                                                user.role === 'administrator'
+                                            }
+                                            onClick={() =>
+                                                openTwoFactorDialog(user)
+                                            }
+                                        >
+                                            <ShieldCheck />
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            onClick={() => openEditDialog(user)}
+                                        >
+                                            <SquarePen />
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            disabled={
+                                                user.role === 'administrator'
+                                            }
+                                            onClick={() =>
+                                                setUserToDelete(user)
+                                            }
+                                        >
+                                            <Trash stroke="#FF2400" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
             </div>
 
             <Dialog open={open} onOpenChange={handleOpenChange}>
-                <DialogContent className="sm:max-w-lg">
+                <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
                     <form onSubmit={submit} className="space-y-4">
                         <DialogHeader>
                             <DialogTitle>
@@ -505,9 +538,9 @@ export default function UserManager({ users }) {
                                 </Button>
 
                                 {qrCodeSvg && (
-                                    <div className='flex justify-center'>
+                                    <div className="flex justify-center">
                                         <div
-                                            className="p-4 bg-white"
+                                            className="bg-white p-4"
                                             dangerouslySetInnerHTML={{
                                                 __html: qrCodeSvg,
                                             }}

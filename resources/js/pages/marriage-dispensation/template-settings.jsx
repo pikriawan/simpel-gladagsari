@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import LetterPreview from '@/components/letter-preview';
 import { DEFAULT_TEMPLATE_SETTINGS } from '@/lib/template-settings';
+import { cn } from '@/lib/utils';
 
 const SAMPLE_PREVIEW_FORM = {
     letterNumber: '001',
@@ -47,6 +48,7 @@ export default function PengaturanTemplate({ settings = {} }) {
         ...settings,
     }));
     const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+    const [mobileTab, setMobileTab] = useState('settings');
     const templateRef = useRef(template);
 
     useEffect(() => {
@@ -124,14 +126,49 @@ export default function PengaturanTemplate({ settings = {} }) {
         <>
             <Head title="Pengaturan Template" />
 
-            <div className="flex-1 p-6">
-                <h1 className="mb-6 text-xl font-bold tracking-tight text-foreground">
+            <div className="flex-1 p-3 sm:p-6">
+                <h1 className="mb-4 text-lg font-bold tracking-tight text-foreground sm:mb-6 sm:text-xl">
                     Pengaturan Template
                 </h1>
 
-                <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-2">
+                {/* Mobile View Toggle */}
+                <div className="mb-4 xl:hidden">
+                    <div className="flex rounded-lg border bg-muted p-1 text-muted-foreground">
+                        <button
+                            type="button"
+                            onClick={() => setMobileTab('settings')}
+                            className={cn(
+                                'flex-1 rounded-md py-1.5 text-xs font-semibold transition-all',
+                                mobileTab === 'settings'
+                                    ? 'bg-background text-foreground shadow-xs'
+                                    : 'hover:text-foreground',
+                            )}
+                        >
+                            Form Pengaturan
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMobileTab('preview')}
+                            className={cn(
+                                'flex-1 rounded-md py-1.5 text-xs font-semibold transition-all',
+                                mobileTab === 'preview'
+                                    ? 'bg-background text-foreground shadow-xs'
+                                    : 'hover:text-foreground',
+                            )}
+                        >
+                            Pratinjau Template
+                        </button>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
                     {/* ── Form Pengaturan ──────────────────────────────────── */}
-                    <div className="flex flex-col gap-6">
+                    <div
+                        className={cn(
+                            'flex flex-col gap-6',
+                            mobileTab === 'preview' && 'hidden xl:flex',
+                        )}
+                    >
                         {/* 1. KOP SURAT */}
                         <section className="flex flex-col gap-3">
                             <h2 className="text-sm font-semibold text-foreground">
@@ -348,10 +385,15 @@ export default function PengaturanTemplate({ settings = {} }) {
                     </div>
 
                     {/* ── Preview Surat dengan Pita Pratinjau ────────────────── */}
-                    <div className="sticky top-6">
+                    <div
+                        className={cn(
+                            'sticky top-6',
+                            mobileTab === 'settings' && 'hidden xl:block',
+                        )}
+                    >
                         <div className="relative min-h-0 overflow-hidden rounded-md border border-border shadow-xs">
                             {/* Pita diagonal Pratinjau di sudut kanan atas */}
-                            <div className="pointer-events-none absolute top-6 -right-12 z-20 w-44 rotate-45 bg-zinc-400/90 py-1 text-center text-xs font-semibold tracking-wider text-white shadow-xs backdrop-blur-xs select-none">
+                            <div className="pointer-events-none absolute top-6 -right-12 z-20 w-44 rotate-45 bg-zinc-400/90 py-1 text-center text-xs font-semibold tracking-wider text-white shadow-xs backdrop-blur-xs select-none print:hidden">
                                 Pratinjau
                             </div>
 

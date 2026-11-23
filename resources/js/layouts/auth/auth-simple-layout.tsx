@@ -15,7 +15,7 @@ export default function AuthSimpleLayout({
                 <div className="absolute top-8 left-8 lg:top-[50px] lg:left-[50px]">
                     <Link
                         href={home()}
-                        className="font-bold text-2xl tracking-tight text-black"
+                        className="text-2xl font-bold tracking-tight text-black"
                         style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
                     >
                         Simpel
@@ -25,9 +25,13 @@ export default function AuthSimpleLayout({
                 {/* Konten Form (Lebar pas 400px seperti di SVG) */}
                 <div className="w-full max-w-[400px]">
                     <div className="mb-9 space-y-3 text-center">
-                        <h1 className="text-xl lg:text-[22px] font-bold text-black tracking-tight">{title}</h1>
+                        <h1 className="text-xl font-bold tracking-tight text-black lg:text-[22px]">
+                            {title}
+                        </h1>
                         {description && (
-                            <p className="text-sm text-black leading-relaxed">{description}</p>
+                            <p className="text-sm leading-relaxed text-black">
+                                {description}
+                            </p>
                         )}
                     </div>
                     {children}
@@ -35,7 +39,7 @@ export default function AuthSimpleLayout({
             </div>
 
             {/* Panel Kanan – Foto Kantor Kecamatan Gladagsari (50% dengan padding 24px dan rounded 12px sesuai SVG) */}
-            <div className="hidden lg:block lg:w-1/2 p-6 relative">
+            <div className="relative hidden p-6 lg:block lg:w-1/2">
                 <div className="relative h-full w-full overflow-hidden rounded-[12px]">
                     <img
                         src="/assets/kantor-kecamatan.jpg"

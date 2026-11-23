@@ -15,7 +15,12 @@ export default function ConfirmPassword() {
                 {({ processing, errors }) => (
                     <div className="space-y-5">
                         <div className="grid gap-2">
-                            <Label htmlFor="password" className="text-sm font-medium text-black">Password</Label>
+                            <Label
+                                htmlFor="password"
+                                className="text-sm font-medium text-black"
+                            >
+                                Password
+                            </Label>
                             <PasswordInput
                                 id="password"
                                 name="password"
@@ -30,7 +35,7 @@ export default function ConfirmPassword() {
 
                         <div className="flex items-center">
                             <Button
-                                className="w-full h-[42px] rounded-[4px] bg-[#3489D2] hover:bg-[#2c76b5] text-white font-medium shadow-none"
+                                className="h-[42px] w-full rounded-[4px] bg-[#3489D2] font-medium text-white shadow-none hover:bg-[#2c76b5]"
                                 disabled={processing}
                                 data-test="confirm-password-button"
                             >

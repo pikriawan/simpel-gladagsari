@@ -1,11 +1,21 @@
 import { Head, setLayoutProps, resetLayoutProps } from '@inertiajs/react';
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type ChangeEvent,
+} from 'react';
 import { univerSnapshotToExcelJS } from '@/utils/univer-to-xlsx';
 import { xlsxToUniverSnapshot } from '@/utils/xlsx-to-univer';
-import { editor, store as storePatenRegistration, templateSnapshot as templateSnapshotRoute } from '@/routes/paten-registration';
+import {
+    editor,
+    store as storePatenRegistration,
+    templateSnapshot as templateSnapshotRoute,
+} from '@/routes/paten-registration';
 import { Button } from '@/components/ui/button';
 
-import { Univer, LocaleType, CommandType, ICommandService } from '@univerjs/core';
+import { Univer, LocaleType } from '@univerjs/core';
 import { FUniver } from '@univerjs/core/facade';
 
 import { defaultTheme } from '@univerjs/themes';
@@ -181,7 +191,7 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
             }
 
             // Defer agar React selesai memproses state update
-            await new Promise<void>(resolve => setTimeout(resolve, 0));
+            await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
             const univerAPI = univerAPIRef.current;
             if (!univerAPI) return;
@@ -208,7 +218,7 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
                 if (
                     !window.confirm(
                         `File berukuran ${(file.size / 1024 / 1024).toFixed(1)} MB.\n` +
-                        'File besar dapat membutuhkan waktu dan memori yang banyak. Lanjutkan?',
+                            'File besar dapat membutuhkan waktu dan memori yang banyak. Lanjutkan?',
                     )
                 ) {
                     event.target.value = '';
@@ -236,7 +246,7 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
                 // Defer ke macrotask berikutnya — pastikan React sudah selesai
                 // memproses state update setIsImportingXlsx(true) sebelum kita
                 // dispose + recreate workbook (mencegah "synchronously unmount" error)
-                await new Promise<void>(resolve => setTimeout(resolve, 0));
+                await new Promise<void>((resolve) => setTimeout(resolve, 0));
 
                 const univerAPI = univerAPIRef.current;
                 if (!univerAPI) return;
@@ -247,7 +257,9 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
                 autoSave();
             } catch (error) {
                 console.error('Gagal mengimpor file XLSX', error);
-                window.alert('Gagal mengimpor file. Pastikan file adalah format XLSX yang valid.');
+                window.alert(
+                    'Gagal mengimpor file. Pastikan file adalah format XLSX yang valid.',
+                );
             } finally {
                 setIsImportingXlsx(false);
                 event.target.value = '';
@@ -263,39 +275,60 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
                     <Button
                         type="button"
                         variant="outline"
+                        size="sm"
                         onClick={handleClearDocument}
                     >
-                        Kosongkan dokumen
+                        <span className="hidden sm:inline">
+                            Kosongkan dokumen
+                        </span>
+                        <span className="sm:hidden">Kosongkan</span>
                     </Button>
                     <Button
                         type="button"
                         variant="outline"
+                        size="sm"
                         onClick={handleResetToTemplate}
                         disabled={isResettingTemplate}
                     >
-                        {isResettingTemplate ? 'Memuat...' : 'Reset ke template'}
+                        {isResettingTemplate ? (
+                            'Memuat...'
+                        ) : (
+                            <>
+                                <span className="hidden sm:inline">
+                                    Reset ke template
+                                </span>
+                                <span className="sm:hidden">Reset</span>
+                            </>
+                        )}
                     </Button>
                     <Button
                         type="button"
                         variant="outline"
+                        size="sm"
                         onClick={handleImportXlsxClick}
                         disabled={isImportingXlsx}
                     >
-                        {isImportingXlsx ? 'Mengimpor...' : 'Impor (.xlsx)'}
+                        {isImportingXlsx ? 'Mengimpor...' : 'Impor'}
                     </Button>
                     <Button
                         type="button"
                         variant="outline"
+                        size="sm"
                         onClick={handleExportXlsx}
                     >
-                        Ekspor (.xlsx)
+                        Ekspor
                     </Button>
                 </>
             ),
         });
 
         return () => resetLayoutProps();
-    }, [isImportingXlsx, isResettingTemplate, handleResetToTemplate, handleClearDocument]);
+    }, [
+        isImportingXlsx,
+        isResettingTemplate,
+        handleResetToTemplate,
+        handleClearDocument,
+    ]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -304,14 +337,23 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
         const univerPortals = new Set<HTMLElement>();
 
         // Intercept appendChild agar portal Univer yang dibuat saat fullscreen langsung diarahkan ke container
-        const originalAppendChild = document.body.appendChild.bind(document.body);
+        const originalAppendChild = document.body.appendChild.bind(
+            document.body,
+        );
         document.body.appendChild = <T extends Node>(child: T): T => {
-            if (child instanceof HTMLElement && child.id !== 'app' && child.tagName !== 'SCRIPT') {
+            if (
+                child instanceof HTMLElement &&
+                child.id !== 'app' &&
+                child.tagName !== 'SCRIPT'
+            ) {
                 univerPortals.add(child);
                 if (
                     document.fullscreenElement &&
                     containerRef.current &&
-                    (document.fullscreenElement === containerRef.current || containerRef.current.contains(document.fullscreenElement))
+                    (document.fullscreenElement === containerRef.current ||
+                        containerRef.current.contains(
+                            document.fullscreenElement,
+                        ))
                 ) {
                     return containerRef.current.appendChild(child);
                 }
@@ -320,7 +362,9 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
         };
 
         // Perlindungan agar unmount third-party (seperti Univer portal) tidak melempar NotFoundError pada removeChild
-        const originalRemoveChild = document.body.removeChild.bind(document.body);
+        const originalRemoveChild = document.body.removeChild.bind(
+            document.body,
+        );
         document.body.removeChild = <T extends Node>(child: T): T => {
             if (child instanceof HTMLElement) {
                 univerPortals.delete(child);
@@ -339,7 +383,11 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
         const onFullscreenChange = () => {
             const fsEl = document.fullscreenElement;
             const container = containerRef.current;
-            if (fsEl && container && (fsEl === container || container.contains(fsEl))) {
+            if (
+                fsEl &&
+                container &&
+                (fsEl === container || container.contains(fsEl))
+            ) {
                 // Masuk fullscreen: pindahkan portal Univer dari body ke container
                 univerPortals.forEach((portal) => {
                     if (portal.parentNode === document.body) {
@@ -348,7 +396,12 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
                 });
                 // Tangkap juga jika ada elemen portal lain yang sudah terlanjur di-append ke body
                 Array.from(document.body.children).forEach((child) => {
-                    if (child instanceof HTMLElement && child.id !== 'app' && child.tagName !== 'SCRIPT' && child !== container) {
+                    if (
+                        child instanceof HTMLElement &&
+                        child.id !== 'app' &&
+                        child.tagName !== 'SCRIPT' &&
+                        child !== container
+                    ) {
                         univerPortals.add(child);
                         container.appendChild(child);
                     }
@@ -438,7 +491,10 @@ export default function Editor({ snapshot }: { snapshot?: any }) {
         );
 
         return () => {
-            document.removeEventListener('fullscreenchange', onFullscreenChange);
+            document.removeEventListener(
+                'fullscreenchange',
+                onFullscreenChange,
+            );
             const container = containerRef.current;
             if (container) {
                 univerPortals.forEach((portal) => {

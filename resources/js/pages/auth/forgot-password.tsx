@@ -25,7 +25,12 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="email" className="text-sm font-medium text-black">Alamat Email</Label>
+                                <Label
+                                    htmlFor="email"
+                                    className="text-sm font-medium text-black"
+                                >
+                                    Alamat Email
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -41,7 +46,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
                             <div className="my-6 flex items-center justify-start">
                                 <Button
-                                    className="w-full h-[42px] rounded-[4px] bg-[#3489D2] hover:bg-[#2c76b5] text-white font-medium shadow-none"
+                                    className="h-[42px] w-full rounded-[4px] bg-[#3489D2] font-medium text-white shadow-none hover:bg-[#2c76b5]"
                                     disabled={processing}
                                     data-test="email-password-reset-link-button"
                                 >
@@ -57,7 +62,12 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
                 <div className="space-x-1 text-center text-sm text-neutral-600">
                     <span>Atau, kembali ke</span>
-                    <TextLink href={login()} className="text-[#3489D2] hover:underline">halaman login</TextLink>
+                    <TextLink
+                        href={login()}
+                        className="text-[#3489D2] hover:underline"
+                    >
+                        halaman login
+                    </TextLink>
                 </div>
             </div>
         </>

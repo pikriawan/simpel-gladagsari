@@ -28,7 +28,12 @@ export default function Login({ status, canResetPassword }: Props) {
                     <>
                         <div className="flex flex-col gap-5">
                             <div className="grid gap-2">
-                                <Label htmlFor="email" className="text-sm font-medium text-black">NIP</Label>
+                                <Label
+                                    htmlFor="email"
+                                    className="text-sm font-medium text-black"
+                                >
+                                    NIP
+                                </Label>
                                 <Input
                                     id="email"
                                     type="text"
@@ -45,7 +50,12 @@ export default function Login({ status, canResetPassword }: Props) {
 
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password" className="text-sm font-medium text-black">Password</Label>
+                                    <Label
+                                        htmlFor="password"
+                                        className="text-sm font-medium text-black"
+                                    >
+                                        Password
+                                    </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
@@ -70,7 +80,7 @@ export default function Login({ status, canResetPassword }: Props) {
 
                             <Button
                                 type="submit"
-                                className="mt-1 w-full h-[42px] rounded-[4px] bg-[#3489D2] hover:bg-[#2c76b5] text-white font-medium shadow-none"
+                                className="mt-1 h-[42px] w-full rounded-[4px] bg-[#3489D2] font-medium text-white shadow-none hover:bg-[#2c76b5]"
                                 tabIndex={3}
                                 disabled={processing}
                                 data-test="login-button"

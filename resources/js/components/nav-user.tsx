@@ -37,18 +37,18 @@ export function NavUser() {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="group h-auto w-full px-2 py-2 hover:bg-neutral-100 data-[state=open]:bg-neutral-100 transition-colors"
+                            className="group h-auto w-full px-2 py-2 transition-colors hover:bg-neutral-100 data-[state=open]:bg-neutral-100"
                             data-test="sidebar-menu-button"
                         >
                             <div className="flex flex-1 flex-col text-left group-data-[collapsible=icon]:hidden">
-                                <span className="font-semibold text-base text-neutral-900 leading-tight">
+                                <span className="text-base leading-tight font-semibold text-neutral-900">
                                     {auth.user.name}
                                 </span>
-                                <span className="text-sm text-neutral-400 mt-1 font-normal">
+                                <span className="mt-1 text-sm font-normal text-neutral-400">
                                     {roleLabel}
                                 </span>
                             </div>
-                            <SlidersHorizontal className="ml-auto size-5 text-neutral-800 shrink-0 group-data-[collapsible=icon]:mx-auto" />
+                            <SlidersHorizontal className="ml-auto size-5 shrink-0 text-neutral-800 group-data-[collapsible=icon]:mx-auto" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent

@@ -1,10 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import {
-    ChevronDown,
-    FileText,
-    LayoutGrid,
-    Users,
-} from 'lucide-react';
+import { ChevronDown, FileText, LayoutGrid, Users } from 'lucide-react';
 import {
     Collapsible,
     CollapsibleContent,
@@ -19,6 +14,7 @@ import {
     SidebarHeader,
     SidebarMenu,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { dashboard, userManager } from '@/routes';
@@ -66,9 +62,18 @@ const patenRegistrationSubItems = [
 export function AppSidebar() {
     const { auth } = usePage().props;
     const { isCurrentUrl } = useCurrentUrl();
+    const { isMobile, setOpenMobile } = useSidebar();
 
     const isAdmin = auth.user.role === 'administrator';
     const isService = auth.user.role === 'service';
+
+    const handleLinkClick = (e: React.MouseEvent<HTMLElement>) => {
+        if ((e.target as HTMLElement).closest('a')) {
+            if (isMobile) {
+                setOpenMobile(false);
+            }
+        }
+    };
 
     return (
         <Sidebar collapsible="icon" variant="inset" className="bg-white">
@@ -76,20 +81,22 @@ export function AppSidebar() {
                 <Link
                     href={dashboard()}
                     prefetch
-                    className="font-bold text-2xl tracking-tight text-neutral-900 block group-data-[collapsible=icon]:hidden"
+                    onClick={() => isMobile && setOpenMobile(false)}
+                    className="block text-2xl font-bold tracking-tight text-neutral-900 group-data-[collapsible=icon]:hidden"
                 >
                     Simpel
                 </Link>
                 <Link
                     href={dashboard()}
                     prefetch
-                    className="font-bold text-xl tracking-tight text-neutral-900 hidden group-data-[collapsible=icon]:block text-center"
+                    onClick={() => isMobile && setOpenMobile(false)}
+                    className="hidden text-center text-xl font-bold tracking-tight text-neutral-900 group-data-[collapsible=icon]:block"
                 >
                     S
                 </Link>
             </SidebarHeader>
 
-            <SidebarContent className="px-3 py-2">
+            <SidebarContent className="px-3 py-2" onClick={handleLinkClick}>
                 <SidebarGroup className="p-0">
                     <SidebarMenu className="gap-2">
                         {/* Dashboard */}
@@ -97,7 +104,7 @@ export function AppSidebar() {
                             <Link
                                 href={dashboard()}
                                 prefetch
-                                className={`flex items-center gap-3 w-full h-11 px-3.5 rounded-lg text-sm font-medium transition-colors ${
+                                className={`flex h-11 w-full items-center gap-3 rounded-lg px-3.5 text-sm font-medium transition-colors ${
                                     isCurrentUrl(dashboard())
                                         ? 'bg-primary text-primary-foreground'
                                         : 'text-neutral-800 hover:bg-neutral-100 hover:text-neutral-900'
@@ -116,7 +123,7 @@ export function AppSidebar() {
                                 <Link
                                     href={userManager()}
                                     prefetch
-                                    className={`flex items-center gap-3 w-full h-11 px-3.5 rounded-lg text-sm font-medium transition-colors ${
+                                    className={`flex h-11 w-full items-center gap-3 rounded-lg px-3.5 text-sm font-medium transition-colors ${
                                         isCurrentUrl(userManager())
                                             ? 'bg-primary text-primary-foreground'
                                             : 'text-neutral-800 hover:bg-neutral-100 hover:text-neutral-900'
@@ -140,29 +147,31 @@ export function AppSidebar() {
                                     <CollapsibleTrigger asChild>
                                         <button
                                             type="button"
-                                            className="flex items-start justify-between w-full px-3.5 py-2.5 rounded-lg text-neutral-800 hover:bg-neutral-100 transition-colors group cursor-pointer text-left"
+                                            className="group flex w-full cursor-pointer items-start justify-between rounded-lg px-3.5 py-2.5 text-left text-neutral-800 transition-colors hover:bg-neutral-100"
                                         >
                                             <div className="flex items-start gap-3">
-                                                <FileText className="size-5 text-neutral-800 shrink-0 mt-0.5" />
-                                                <span className="text-sm font-medium text-neutral-900 leading-snug group-data-[collapsible=icon]:hidden">
+                                                <FileText className="mt-0.5 size-5 shrink-0 text-neutral-800" />
+                                                <span className="text-sm leading-snug font-medium text-neutral-900 group-data-[collapsible=icon]:hidden">
                                                     Surat Dispensasi
                                                     <br />
                                                     Nikah
                                                 </span>
                                             </div>
-                                            <ChevronDown className="size-4 text-neutral-700 shrink-0 mt-1 transition-transform duration-200 group-data-[state=closed]/collapsible:-rotate-90 group-data-[collapsible=icon]:hidden" />
+                                            <ChevronDown className="mt-1 size-4 shrink-0 text-neutral-700 transition-transform duration-200 group-data-[collapsible=icon]:hidden group-data-[state=closed]/collapsible:-rotate-90" />
                                         </button>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
-                                        <div className="ml-6 pl-3 py-1 flex flex-col gap-1 border-l border-neutral-300">
+                                        <div className="ml-6 flex flex-col gap-1 border-l border-neutral-300 py-1 pl-3">
                                             {suratDispensasiSubItems.map(
                                                 (item) => (
                                                     <Link
                                                         key={item.title}
                                                         href={item.href}
                                                         prefetch
-                                                        className={`flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                                            isCurrentUrl(item.href)
+                                                        className={`flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                                                            isCurrentUrl(
+                                                                item.href,
+                                                            )
                                                                 ? 'bg-primary text-primary-foreground'
                                                                 : 'text-neutral-800 hover:bg-neutral-100 hover:text-neutral-900'
                                                         }`}
@@ -187,27 +196,29 @@ export function AppSidebar() {
                                     <CollapsibleTrigger asChild>
                                         <button
                                             type="button"
-                                            className="flex items-center justify-between w-full px-3.5 py-2.5 rounded-lg text-neutral-800 hover:bg-neutral-100 transition-colors group cursor-pointer text-left"
+                                            className="group flex w-full cursor-pointer items-center justify-between rounded-lg px-3.5 py-2.5 text-left text-neutral-800 transition-colors hover:bg-neutral-100"
                                         >
                                             <div className="flex items-center gap-3">
-                                                <FileText className="size-5 text-neutral-800 shrink-0" />
+                                                <FileText className="size-5 shrink-0 text-neutral-800" />
                                                 <span className="text-sm font-medium text-neutral-900 group-data-[collapsible=icon]:hidden">
                                                     Registrasi PATEN
                                                 </span>
                                             </div>
-                                            <ChevronDown className="size-4 text-neutral-700 shrink-0 transition-transform duration-200 group-data-[state=closed]/collapsible:-rotate-90 group-data-[collapsible=icon]:hidden" />
+                                            <ChevronDown className="size-4 shrink-0 text-neutral-700 transition-transform duration-200 group-data-[collapsible=icon]:hidden group-data-[state=closed]/collapsible:-rotate-90" />
                                         </button>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="group-data-[collapsible=icon]:hidden">
-                                        <div className="ml-6 pl-3 py-1 flex flex-col gap-1 border-l border-neutral-300">
+                                        <div className="ml-6 flex flex-col gap-1 border-l border-neutral-300 py-1 pl-3">
                                             {patenRegistrationSubItems.map(
                                                 (item) => (
                                                     <Link
                                                         key={item.title}
                                                         href={item.href}
                                                         prefetch
-                                                        className={`flex items-center w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                                            isCurrentUrl(item.href)
+                                                        className={`flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                                                            isCurrentUrl(
+                                                                item.href,
+                                                            )
                                                                 ? 'bg-primary text-primary-foreground'
                                                                 : 'text-neutral-800 hover:bg-neutral-100 hover:text-neutral-900'
                                                         }`}

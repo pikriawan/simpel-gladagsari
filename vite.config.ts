@@ -27,9 +27,10 @@ export default defineConfig({
             presets: [reactCompilerPreset()],
         }),
         tailwindcss(),
-        process.env.NODE_ENV === 'development' && wayfinder({
-            formVariants: true,
-        }),
+        process.env.NODE_ENV === 'development' &&
+            wayfinder({
+                formVariants: true,
+            }),
     ]),
     server: {
         watch: {

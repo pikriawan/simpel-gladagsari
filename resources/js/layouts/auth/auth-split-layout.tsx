@@ -7,7 +7,6 @@ export default function AuthSplitLayout({
     title,
     description,
 }: AuthLayoutProps) {
-
     return (
         <div className="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
             <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
@@ -16,7 +15,7 @@ export default function AuthSplitLayout({
                     href={home()}
                     className="relative z-20 flex items-center text-lg font-medium"
                 >
-                    <span className="font-bold text-2xl tracking-tight text-white">
+                    <span className="text-2xl font-bold tracking-tight text-white">
                         Simpel
                     </span>
                 </Link>
@@ -27,7 +26,7 @@ export default function AuthSplitLayout({
                         href={home()}
                         className="relative z-20 flex items-center justify-center lg:hidden"
                     >
-                        <span className="font-bold text-2xl tracking-tight text-neutral-900 sm:text-3xl dark:text-white">
+                        <span className="text-2xl font-bold tracking-tight text-neutral-900 sm:text-3xl dark:text-white">
                             Simpel
                         </span>
                     </Link>

@@ -69,9 +69,15 @@ function excelColorToRgb(color: any): string | undefined {
             const r = parseInt(baseHex.slice(1, 3), 16);
             const g = parseInt(baseHex.slice(3, 5), 16);
             const b = parseInt(baseHex.slice(5, 7), 16);
-            const tintedR = applyTint(r, color.tint).toString(16).padStart(2, '0');
-            const tintedG = applyTint(g, color.tint).toString(16).padStart(2, '0');
-            const tintedB = applyTint(b, color.tint).toString(16).padStart(2, '0');
+            const tintedR = applyTint(r, color.tint)
+                .toString(16)
+                .padStart(2, '0');
+            const tintedG = applyTint(g, color.tint)
+                .toString(16)
+                .padStart(2, '0');
+            const tintedB = applyTint(b, color.tint)
+                .toString(16)
+                .padStart(2, '0');
             return `#${tintedR}${tintedG}${tintedB}`.toUpperCase();
         }
         return baseHex;
@@ -82,36 +88,36 @@ function excelColorToRgb(color: any): string | undefined {
 
 /** ExcelJS border style string → Univer BorderStyleTypes */
 const BORDER_TO_UNIVER: Record<string, number> = {
-    thin:             1,
-    hair:             2,
-    dotted:           3,
-    dashed:           4,
-    dashDot:          5,
-    dashDotDot:       6,
-    double:           7,
-    medium:           8,
-    mediumDashed:     9,
-    mediumDashDot:    10,
+    thin: 1,
+    hair: 2,
+    dotted: 3,
+    dashed: 4,
+    dashDot: 5,
+    dashDotDot: 6,
+    double: 7,
+    medium: 8,
+    mediumDashed: 9,
+    mediumDashDot: 10,
     mediumDashDotDot: 11,
-    slantDashDot:     12,
-    thick:            13,
+    slantDashDot: 12,
+    thick: 13,
 };
 
 /** ExcelJS horizontal alignment → Univer HorizontalAlign */
 const HALIGN_TO_UNIVER: Record<string, number> = {
-    left:        1,
-    center:      2,
-    right:       3,
-    justify:     4,
-    fill:        5,
+    left: 1,
+    center: 2,
+    right: 3,
+    justify: 4,
+    fill: 5,
     distributed: 6,
 };
 
 /** ExcelJS vertical alignment → Univer VerticalAlign */
 const VALIGN_TO_UNIVER: Record<string, number> = {
-    top:         1,
-    middle:      2,
-    bottom:      3,
+    top: 1,
+    middle: 2,
+    bottom: 3,
     distributed: 2,
 };
 
@@ -126,14 +132,23 @@ function parseRangeStr(s: string): any | null {
     function addrToRC(addr: string): { r: number; c: number } | null {
         const m = addr.trim().match(/^([A-Z]+)(\d+)$/i);
         if (!m) return null;
-        const c = m[1].toUpperCase().split('').reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+        const c =
+            m[1]
+                .toUpperCase()
+                .split('')
+                .reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0) - 1;
         return { r: parseInt(m[2]) - 1, c };
     }
 
     const start = addrToRC(parts[0]);
-    const end   = addrToRC(parts[1]);
+    const end = addrToRC(parts[1]);
     if (!start || !end) return null;
-    return { startRow: start.r, startColumn: start.c, endRow: end.r, endColumn: end.c };
+    return {
+        startRow: start.r,
+        startColumn: start.c,
+        endRow: end.r,
+        endColumn: end.c,
+    };
 }
 
 export interface MergeRange {
@@ -164,7 +179,9 @@ function extractMerges(ws: ExcelJS.Worksheet): MergeRange[] {
     }
 
     // 2. ws._merges map (fallback)
-    const internalMerges = (ws as any)._merges as Record<string, any> | undefined;
+    const internalMerges = (ws as any)._merges as
+        | Record<string, any>
+        | undefined;
     if (internalMerges) {
         for (const val of Object.values(internalMerges)) {
             if (!val) continue;
@@ -172,7 +189,12 @@ function extractMerges(ws: ExcelJS.Worksheet): MergeRange[] {
             const left = val.left ?? val.model?.left;
             const bottom = val.bottom ?? val.model?.bottom;
             const right = val.right ?? val.model?.right;
-            if (top != null && left != null && bottom != null && right != null) {
+            if (
+                top != null &&
+                left != null &&
+                bottom != null &&
+                right != null
+            ) {
                 const startRow = top - 1;
                 const startColumn = left - 1;
                 const endRow = bottom - 1;
@@ -180,7 +202,12 @@ function extractMerges(ws: ExcelJS.Worksheet): MergeRange[] {
                 const key = `${startRow}:${startColumn}:${endRow}:${endColumn}`;
                 if (!seen.has(key)) {
                     seen.add(key);
-                    mergeData.push({ startRow, startColumn, endRow, endColumn });
+                    mergeData.push({
+                        startRow,
+                        startColumn,
+                        endRow,
+                        endColumn,
+                    });
                 }
             }
         }
@@ -191,7 +218,9 @@ function extractMerges(ws: ExcelJS.Worksheet): MergeRange[] {
 
 // ─── Style converter helpers ──────────────────────────────────────────────────
 
-function convertFont(font: Partial<ExcelJS.Font> | undefined): Record<string, any> {
+function convertFont(
+    font: Partial<ExcelJS.Font> | undefined,
+): Record<string, any> {
     if (!font) return {};
     const out: Record<string, any> = {};
 
@@ -224,13 +253,18 @@ function convertFill(fill: ExcelJS.Fill | undefined): Record<string, any> {
     return {};
 }
 
-function convertAlignment(al: Partial<ExcelJS.Alignment> | undefined): Record<string, any> {
+function convertAlignment(
+    al: Partial<ExcelJS.Alignment> | undefined,
+): Record<string, any> {
     if (!al) return {};
     const out: Record<string, any> = {};
-    if (al.horizontal && HALIGN_TO_UNIVER[al.horizontal]) out.ht = HALIGN_TO_UNIVER[al.horizontal];
-    if (al.vertical && VALIGN_TO_UNIVER[al.vertical]) out.vt = VALIGN_TO_UNIVER[al.vertical];
+    if (al.horizontal && HALIGN_TO_UNIVER[al.horizontal])
+        out.ht = HALIGN_TO_UNIVER[al.horizontal];
+    if (al.vertical && VALIGN_TO_UNIVER[al.vertical])
+        out.vt = VALIGN_TO_UNIVER[al.vertical];
     if (al.wrapText) out.tb = 3; // WrapStrategy.WRAP
-    if (al.textRotation && al.textRotation !== 0) out.tr = { a: al.textRotation };
+    if (al.textRotation && al.textRotation !== 0)
+        out.tr = { a: al.textRotation };
     return out;
 }
 
@@ -241,7 +275,9 @@ function convertOneBorder(side: Partial<ExcelJS.Border> | undefined): any {
     return { s, cl: { rgb } };
 }
 
-function convertBorder(border: Partial<ExcelJS.Borders> | undefined): Record<string, any> {
+function convertBorder(
+    border: Partial<ExcelJS.Borders> | undefined,
+): Record<string, any> {
     if (!border) return {};
     const bd: Record<string, any> = {};
     const t = convertOneBorder(border.top);
@@ -351,16 +387,38 @@ export async function xlsxToUniverSnapshot(buffer: ArrayBuffer): Promise<any> {
                 const c = colNum - 1; // 0-indexed
 
                 const mergeInfo = mergeCellMap.get(`${r}:${c}`);
-                const isMaster = mergeInfo ? (mergeInfo.startRow === r && mergeInfo.startColumn === c) : false;
+                const isMaster = mergeInfo
+                    ? mergeInfo.startRow === r && mergeInfo.startColumn === c
+                    : false;
                 const isSlave = mergeInfo ? !isMaster : false;
 
-                const hasValue = cell.type !== ExcelJS.ValueType.Null && cell.value != null;
-                const hasBorder = !!cell.border && (!!cell.border.top || !!cell.border.bottom || !!cell.border.left || !!cell.border.right);
-                const hasFill = !!cell.fill && cell.fill.type === 'pattern' && (cell.fill as ExcelJS.FillPattern).pattern !== 'none';
-                const hasFont = !!cell.font && (!!cell.font.bold || !!cell.font.color || !!cell.font.name || !!cell.font.size);
+                const hasValue =
+                    cell.type !== ExcelJS.ValueType.Null && cell.value != null;
+                const hasBorder =
+                    !!cell.border &&
+                    (!!cell.border.top ||
+                        !!cell.border.bottom ||
+                        !!cell.border.left ||
+                        !!cell.border.right);
+                const hasFill =
+                    !!cell.fill &&
+                    cell.fill.type === 'pattern' &&
+                    (cell.fill as ExcelJS.FillPattern).pattern !== 'none';
+                const hasFont =
+                    !!cell.font &&
+                    (!!cell.font.bold ||
+                        !!cell.font.color ||
+                        !!cell.font.name ||
+                        !!cell.font.size);
 
                 // Jika sel tidak punya nilai, border, fill, font, dan bukan bagian merge: lewati (hemat RAM)
-                if (!hasValue && !hasBorder && !hasFill && !hasFont && !mergeInfo) {
+                if (
+                    !hasValue &&
+                    !hasBorder &&
+                    !hasFill &&
+                    !hasFont &&
+                    !mergeInfo
+                ) {
                     continue;
                 }
 
@@ -394,8 +452,12 @@ export async function xlsxToUniverSnapshot(buffer: ArrayBuffer): Promise<any> {
                         cd.v = `${m}/${day}/${y}`;
                         cd.t = 1;
                     } else if (cell.type === ExcelJS.ValueType.RichText) {
-                        const rt = cell.value as { richText: Array<{ text: string }> };
-                        cd.v = (rt.richText || []).map((part) => part.text).join('');
+                        const rt = cell.value as {
+                            richText: Array<{ text: string }>;
+                        };
+                        cd.v = (rt.richText || [])
+                            .map((part) => part.text)
+                            .join('');
                         cd.t = 1;
                     } else if (hasValue) {
                         cd.v = cell.value;
@@ -413,26 +475,46 @@ export async function xlsxToUniverSnapshot(buffer: ArrayBuffer): Promise<any> {
 
                 if (isMaster && mergeInfo) {
                     // Gabungkan batas luar merge ke master cell
-                    const bottomCell = ws.getCell(mergeInfo.endRow + 1, mergeInfo.startColumn + 1);
-                    const rightCell = ws.getCell(mergeInfo.startRow + 1, mergeInfo.endColumn + 1);
-                    if (bottomCell.border?.bottom) bBottom = bottomCell.border.bottom;
-                    if (rightCell.border?.right) bRight = rightCell.border.right;
+                    const bottomCell = ws.getCell(
+                        mergeInfo.endRow + 1,
+                        mergeInfo.startColumn + 1,
+                    );
+                    const rightCell = ws.getCell(
+                        mergeInfo.startRow + 1,
+                        mergeInfo.endColumn + 1,
+                    );
+                    if (bottomCell.border?.bottom)
+                        bBottom = bottomCell.border.bottom;
+                    if (rightCell.border?.right)
+                        bRight = rightCell.border.right;
                 } else if (isSlave && mergeInfo) {
                     // Pastikan slave cell di batas luar merge membawa border sisi batas tersebut
                     if (r === mergeInfo.endRow && !bBottom) {
-                        const bottomRef = ws.getCell(mergeInfo.endRow + 1, mergeInfo.startColumn + 1);
+                        const bottomRef = ws.getCell(
+                            mergeInfo.endRow + 1,
+                            mergeInfo.startColumn + 1,
+                        );
                         bBottom = bottomRef.border?.bottom;
                     }
                     if (c === mergeInfo.endColumn && !bRight) {
-                        const rightRef = ws.getCell(mergeInfo.startRow + 1, mergeInfo.endColumn + 1);
+                        const rightRef = ws.getCell(
+                            mergeInfo.startRow + 1,
+                            mergeInfo.endColumn + 1,
+                        );
                         bRight = rightRef.border?.right;
                     }
                     if (r === mergeInfo.startRow && !bTop) {
-                        const topRef = ws.getCell(mergeInfo.startRow + 1, mergeInfo.startColumn + 1);
+                        const topRef = ws.getCell(
+                            mergeInfo.startRow + 1,
+                            mergeInfo.startColumn + 1,
+                        );
                         bTop = topRef.border?.top;
                     }
                     if (c === mergeInfo.startColumn && !bLeft) {
-                        const leftRef = ws.getCell(mergeInfo.startRow + 1, mergeInfo.startColumn + 1);
+                        const leftRef = ws.getCell(
+                            mergeInfo.startRow + 1,
+                            mergeInfo.startColumn + 1,
+                        );
                         bLeft = leftRef.border?.left;
                     }
                 }

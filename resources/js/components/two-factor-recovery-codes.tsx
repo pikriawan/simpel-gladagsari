@@ -61,8 +61,8 @@ export default function TwoFactorRecoveryCodes({
                 </CardTitle>
                 <CardDescription>
                     Kode pemulihan memungkinkan Anda mendapatkan kembali akses
-                    jika kehilangan perangkat 2FA. Simpan di pengelola kata sandi
-                    yang aman.
+                    jika kehilangan perangkat 2FA. Simpan di pengelola kata
+                    sandi yang aman.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -77,7 +77,8 @@ export default function TwoFactorRecoveryCodes({
                             className="size-4"
                             aria-hidden="true"
                         />
-                        {codesAreVisible ? 'Sembunyikan' : 'Tampilkan'} kode pemulihan
+                        {codesAreVisible ? 'Sembunyikan' : 'Tampilkan'} kode
+                        pemulihan
                     </Button>
 
                     {canRegenerateCodes && (
@@ -148,9 +149,8 @@ export default function TwoFactorRecoveryCodes({
                                     <p id="regenerate-warning">
                                         Setiap kode pemulihan hanya dapat
                                         digunakan sekali untuk mengakses akun
-                                        Anda dan akan dihapus setelah
-                                        digunakan. Jika Anda membutuhkan lebih
-                                        banyak, klik{' '}
+                                        Anda dan akan dihapus setelah digunakan.
+                                        Jika Anda membutuhkan lebih banyak, klik{' '}
                                         <span className="font-bold">
                                             Buat ulang kode
                                         </span>{' '}

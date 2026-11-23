@@ -11,9 +11,10 @@ import { jsPDF } from 'jspdf';
  */
 export async function downloadLetterPdf(
     element = null,
-    filename = 'Surat_Dispensasi_Nikah.pdf'
+    filename = 'Surat_Dispensasi_Nikah.pdf',
 ) {
-    const targetElement = element || document.getElementById('printable-letter');
+    const targetElement =
+        element || document.getElementById('printable-letter');
     if (!targetElement) {
         console.warn('Elemen surat tidak ditemukan untuk ekspor PDF.');
         return false;
