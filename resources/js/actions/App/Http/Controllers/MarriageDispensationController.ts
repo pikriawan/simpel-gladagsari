@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::editor
- * @see app/Http/Controllers/MarriageDispensationController.php:189
+ * @see app/Http/Controllers/MarriageDispensationController.php:195
  * @route '/marriage-dispensation/editor'
  */
 export const editor = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ editor.definition = {
 
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::editor
- * @see app/Http/Controllers/MarriageDispensationController.php:189
+ * @see app/Http/Controllers/MarriageDispensationController.php:195
  * @route '/marriage-dispensation/editor'
  */
 editor.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ editor.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::editor
- * @see app/Http/Controllers/MarriageDispensationController.php:189
+ * @see app/Http/Controllers/MarriageDispensationController.php:195
  * @route '/marriage-dispensation/editor'
  */
 editor.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ editor.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::editor
- * @see app/Http/Controllers/MarriageDispensationController.php:189
+ * @see app/Http/Controllers/MarriageDispensationController.php:195
  * @route '/marriage-dispensation/editor'
  */
 editor.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ editor.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\MarriageDispensationController::editor
- * @see app/Http/Controllers/MarriageDispensationController.php:189
+ * @see app/Http/Controllers/MarriageDispensationController.php:195
  * @route '/marriage-dispensation/editor'
  */
     const editorForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ editor.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\MarriageDispensationController::editor
- * @see app/Http/Controllers/MarriageDispensationController.php:189
+ * @see app/Http/Controllers/MarriageDispensationController.php:195
  * @route '/marriage-dispensation/editor'
  */
         editorForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ editor.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\MarriageDispensationController::editor
- * @see app/Http/Controllers/MarriageDispensationController.php:189
+ * @see app/Http/Controllers/MarriageDispensationController.php:195
  * @route '/marriage-dispensation/editor'
  */
         editorForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ editor.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     editor.form = editorForm
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::loadToEditor
- * @see app/Http/Controllers/MarriageDispensationController.php:198
+ * @see app/Http/Controllers/MarriageDispensationController.php:204
  * @route '/marriage-dispensation/{marriageDispensation}/editor'
  */
 export const loadToEditor = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ loadToEditor.definition = {
 
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::loadToEditor
- * @see app/Http/Controllers/MarriageDispensationController.php:198
+ * @see app/Http/Controllers/MarriageDispensationController.php:204
  * @route '/marriage-dispensation/{marriageDispensation}/editor'
  */
 loadToEditor.url = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -127,7 +127,7 @@ loadToEditor.url = (args: { marriageDispensation: number | { id: number } } | [m
 
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::loadToEditor
- * @see app/Http/Controllers/MarriageDispensationController.php:198
+ * @see app/Http/Controllers/MarriageDispensationController.php:204
  * @route '/marriage-dispensation/{marriageDispensation}/editor'
  */
 loadToEditor.get = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -136,7 +136,7 @@ loadToEditor.get = (args: { marriageDispensation: number | { id: number } } | [m
 })
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::loadToEditor
- * @see app/Http/Controllers/MarriageDispensationController.php:198
+ * @see app/Http/Controllers/MarriageDispensationController.php:204
  * @route '/marriage-dispensation/{marriageDispensation}/editor'
  */
 loadToEditor.head = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -146,7 +146,7 @@ loadToEditor.head = (args: { marriageDispensation: number | { id: number } } | [
 
     /**
 * @see \App\Http\Controllers\MarriageDispensationController::loadToEditor
- * @see app/Http/Controllers/MarriageDispensationController.php:198
+ * @see app/Http/Controllers/MarriageDispensationController.php:204
  * @route '/marriage-dispensation/{marriageDispensation}/editor'
  */
     const loadToEditorForm = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -156,7 +156,7 @@ loadToEditor.head = (args: { marriageDispensation: number | { id: number } } | [
 
             /**
 * @see \App\Http\Controllers\MarriageDispensationController::loadToEditor
- * @see app/Http/Controllers/MarriageDispensationController.php:198
+ * @see app/Http/Controllers/MarriageDispensationController.php:204
  * @route '/marriage-dispensation/{marriageDispensation}/editor'
  */
         loadToEditorForm.get = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -165,7 +165,7 @@ loadToEditor.head = (args: { marriageDispensation: number | { id: number } } | [
         })
             /**
 * @see \App\Http\Controllers\MarriageDispensationController::loadToEditor
- * @see app/Http/Controllers/MarriageDispensationController.php:198
+ * @see app/Http/Controllers/MarriageDispensationController.php:204
  * @route '/marriage-dispensation/{marriageDispensation}/editor'
  */
         loadToEditorForm.head = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -337,7 +337,7 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     exportMethod.form = exportMethodForm
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::store
- * @see app/Http/Controllers/MarriageDispensationController.php:208
+ * @see app/Http/Controllers/MarriageDispensationController.php:214
  * @route '/marriage-dispensation'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -352,7 +352,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::store
- * @see app/Http/Controllers/MarriageDispensationController.php:208
+ * @see app/Http/Controllers/MarriageDispensationController.php:214
  * @route '/marriage-dispensation'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -361,7 +361,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::store
- * @see app/Http/Controllers/MarriageDispensationController.php:208
+ * @see app/Http/Controllers/MarriageDispensationController.php:214
  * @route '/marriage-dispensation'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -371,7 +371,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\MarriageDispensationController::store
- * @see app/Http/Controllers/MarriageDispensationController.php:208
+ * @see app/Http/Controllers/MarriageDispensationController.php:214
  * @route '/marriage-dispensation'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -381,7 +381,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\MarriageDispensationController::store
- * @see app/Http/Controllers/MarriageDispensationController.php:208
+ * @see app/Http/Controllers/MarriageDispensationController.php:214
  * @route '/marriage-dispensation'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -392,7 +392,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::destroy
- * @see app/Http/Controllers/MarriageDispensationController.php:261
+ * @see app/Http/Controllers/MarriageDispensationController.php:278
  * @route '/marriage-dispensation/{marriageDispensation}'
  */
 export const destroy = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -407,7 +407,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::destroy
- * @see app/Http/Controllers/MarriageDispensationController.php:261
+ * @see app/Http/Controllers/MarriageDispensationController.php:278
  * @route '/marriage-dispensation/{marriageDispensation}'
  */
 destroy.url = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -440,7 +440,7 @@ destroy.url = (args: { marriageDispensation: number | { id: number } } | [marria
 
 /**
 * @see \App\Http\Controllers\MarriageDispensationController::destroy
- * @see app/Http/Controllers/MarriageDispensationController.php:261
+ * @see app/Http/Controllers/MarriageDispensationController.php:278
  * @route '/marriage-dispensation/{marriageDispensation}'
  */
 destroy.delete = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -450,7 +450,7 @@ destroy.delete = (args: { marriageDispensation: number | { id: number } } | [mar
 
     /**
 * @see \App\Http\Controllers\MarriageDispensationController::destroy
- * @see app/Http/Controllers/MarriageDispensationController.php:261
+ * @see app/Http/Controllers/MarriageDispensationController.php:278
  * @route '/marriage-dispensation/{marriageDispensation}'
  */
     const destroyForm = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -465,7 +465,7 @@ destroy.delete = (args: { marriageDispensation: number | { id: number } } | [mar
 
             /**
 * @see \App\Http\Controllers\MarriageDispensationController::destroy
- * @see app/Http/Controllers/MarriageDispensationController.php:261
+ * @see app/Http/Controllers/MarriageDispensationController.php:278
  * @route '/marriage-dispensation/{marriageDispensation}'
  */
         destroyForm.delete = (args: { marriageDispensation: number | { id: number } } | [marriageDispensation: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
