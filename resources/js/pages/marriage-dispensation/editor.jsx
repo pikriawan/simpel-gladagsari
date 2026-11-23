@@ -49,12 +49,20 @@ const RELIGIONS = [
     'Konghucu',
 ];
 
+const getTodayString = () => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+};
+
 const EMPTY_FORM = {
     id: null,
     letterNumber: '',
     village: '',
     referenceLetterNumber: '',
-    letterDate: '',
+    letterDate: getTodayString(),
     applicantName: '',
     applicantBirthPlaceDate: '',
     subvillage: '',
@@ -71,7 +79,7 @@ import { getAllSubvillagesList, getAllVillagesList } from '@/lib/village-data';
 import { DEFAULT_TEMPLATE_SETTINGS } from '@/lib/template-settings';
 
 function recordToForm(record) {
-    if (!record) return { ...EMPTY_FORM };
+    if (!record) return { ...EMPTY_FORM, letterDate: getTodayString() };
     let sub = record.subvillage ?? '';
     let vil = record.village ?? record.village_name ?? '';
     if (sub.includes(',') && !vil) {
@@ -86,7 +94,7 @@ function recordToForm(record) {
         letterNumber: extractLetterSequence(record.letter_number),
         village: vil,
         referenceLetterNumber: record.reference_letter_number ?? '',
-        letterDate: (record.letter_date ?? '').slice(0, 10),
+        letterDate: (record.letter_date ?? '').slice(0, 10) || getTodayString(),
         applicantName: record.applicant_name ?? '',
         applicantBirthPlaceDate: record.applicant_birth_place_date ?? '',
         subvillage: sub,
