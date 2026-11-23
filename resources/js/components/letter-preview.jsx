@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import { fmtDateDay, fmtDateIndo } from '@/lib/format';
+import { fmtDateDay, fmtDateIndo, formatLetterNumber } from '@/lib/format';
 
 const DEFAULT_TEMPLATE = {
     version: 8,
@@ -159,11 +159,8 @@ export default function LetterPreview({
                     <div>
                         Nomor :{' '}
                         {form.letterNumber
-                            ? form.letterNumber.includes('/6.20/') ||
-                              form.letterNumber.startsWith('474.2/')
-                                ? form.letterNumber
-                                : `474.2/${form.letterNumber}/6.20/${new Date().getFullYear()}`
-                            : `474.2/.../6.20/${new Date().getFullYear()}`}
+                            ? formatLetterNumber(form.letterNumber, form.letterDate)
+                            : `474.2/.../6.20/${form.letterDate ? String(form.letterDate).slice(0, 4) : new Date().getFullYear()}`}
                     </div>
                 </section>
 

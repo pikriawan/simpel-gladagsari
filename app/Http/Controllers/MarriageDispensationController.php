@@ -120,7 +120,13 @@ class MarriageDispensationController extends Controller
                 $tanggalPernikahan = Carbon::parse($record->marriage_date)->locale('id')->isoFormat('D MMMM Y');
             }
 
-            $sheet->setCellValue("A{$rowNum}", $record->letter_number ?: '-');
+            $letterNumber = $record->letter_number;
+            if ($letterNumber && ! str_contains($letterNumber, '/6.20/') && ! str_starts_with($letterNumber, '474.2/')) {
+                $year = $record->letter_date ? substr($record->letter_date, 0, 4) : ($record->created_at ? $record->created_at->format('Y') : date('Y'));
+                $letterNumber = "474.2/{$letterNumber}/6.20/{$year}";
+            }
+
+            $sheet->setCellValue("A{$rowNum}", $letterNumber ?: '-');
             $sheet->setCellValue("B{$rowNum}", $record->village ?: '-');
             $sheet->setCellValue("C{$rowNum}", $record->reference_letter_number ?: '-');
             $sheet->setCellValue("D{$rowNum}", $tanggalSurat);
@@ -226,8 +232,19 @@ class MarriageDispensationController extends Controller
             'partnerAddress' => ['nullable', 'string'],
         ]);
 
+        $rawNumber = trim($validated['letterNumber'] ?? '');
+        $letterDateYear = ! empty($validated['letterDate']) ? substr($validated['letterDate'], 0, 4) : date('Y');
+        $fullLetterNumber = null;
+        if ($rawNumber !== '') {
+            if (str_contains($rawNumber, '/6.20/') || str_starts_with($rawNumber, '474.2/')) {
+                $fullLetterNumber = $rawNumber;
+            } else {
+                $fullLetterNumber = "474.2/{$rawNumber}/6.20/{$letterDateYear}";
+            }
+        }
+
         $payload = [
-            'letter_number' => $validated['letterNumber'] ?? null,
+            'letter_number' => $fullLetterNumber,
             'village' => $validated['village'] ?? $validated['villageName'] ?? null,
             'reference_letter_number' => $validated['referenceLetterNumber'] ?? null,
             'letter_date' => $validated['letterDate'] ?? null,

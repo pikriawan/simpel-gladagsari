@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import LetterPreview from '@/components/letter-preview';
 import { downloadLetterPdf } from '@/lib/download-letter-pdf';
+import { extractLetterSequence, formatLetterNumber } from '@/lib/format';
 import {
     Field,
     FieldError,
@@ -82,7 +83,7 @@ function recordToForm(record) {
     }
     return {
         id: record.id ?? null,
-        letterNumber: record.letter_number ?? '',
+        letterNumber: extractLetterSequence(record.letter_number),
         village: vil,
         referenceLetterNumber: record.reference_letter_number ?? '',
         letterDate: (record.letter_date ?? '').slice(0, 10),
@@ -177,17 +178,19 @@ export default function Editor({ record, templateSettings = {} }) {
         }
 
         setIsSubmitting(true);
-        router.post(storeMarriageDispensation().url, form, {
+        const rawNumber = (form.letterNumber || '').trim();
+        const fullLetterNumber = rawNumber
+            ? formatLetterNumber(rawNumber, form.letterDate)
+            : '';
+
+        const submitPayload = {
+            ...form,
+            letterNumber: fullLetterNumber || form.letterNumber,
+        };
+
+        router.post(storeMarriageDispensation().url, submitPayload, {
             preserveScroll: true,
             onSuccess: async () => {
-                const rawNumber = (form.letterNumber || '').trim();
-                const fullLetterNumber = rawNumber
-                    ? rawNumber.includes('/6.20/') ||
-                      rawNumber.startsWith('474.2/')
-                        ? rawNumber
-                        : `474.2/${rawNumber}/6.20/${new Date().getFullYear()}`
-                    : '';
-
                 // Karakter seperti '/' diganti '-' agar valid sebagai nama file di semua OS
                 const cleanNumber = fullLetterNumber
                     .replace(/[\\/:*?"<>|]/g, '-')

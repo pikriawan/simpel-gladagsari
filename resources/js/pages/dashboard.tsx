@@ -28,6 +28,7 @@ import {
     templateSettings,
     villageData,
 } from '@/routes/marriage-dispensation';
+import { formatLetterNumber } from '@/lib/format';
 
 type RecentUser = {
     id: number;
@@ -254,8 +255,11 @@ export default function Dashboard({
                                                     >
                                                         <div className="min-w-0">
                                                             <p className="truncate text-sm font-medium sm:text-base">
-                                                                {record.letter_number ||
-                                                                    '-'}
+                                                                {formatLetterNumber(
+                                                                    record.letter_number,
+                                                                    record.marriage_date ||
+                                                                        record.created_at,
+                                                                )}
                                                             </p>
                                                             <p className="truncate text-xs text-muted-foreground sm:text-sm">
                                                                 {record.applicant_name ||

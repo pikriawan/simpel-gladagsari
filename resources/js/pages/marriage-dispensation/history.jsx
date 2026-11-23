@@ -38,6 +38,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from '@/components/ui/dialog';
+import { formatLetterNumber } from '@/lib/format';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -123,8 +124,11 @@ function DetailModal({ record, open, onClose, onDelete, onLoadToEditor }) {
                     </h3>
                     <div className="divide-y">
                         <DetailRow
-                            label="Nomor urut"
-                            value={record.letter_number}
+                            label="Nomor surat"
+                            value={formatLetterNumber(
+                                record.letter_number,
+                                record.letter_date || record.created_at,
+                            )}
                         />
                         <DetailRow
                             label="Nama desa pengantar"
@@ -253,7 +257,11 @@ export default function Riwayat({ records, filters }) {
     const handleDelete = (record) => {
         const target = record ?? selectedRecord;
         if (!target) return;
-        if (!window.confirm(`Hapus riwayat surat "${target.letter_number}"?`))
+        const letterNum = formatLetterNumber(
+            target.letter_number,
+            target.letter_date || target.created_at,
+        );
+        if (!window.confirm(`Hapus riwayat surat "${letterNum}"?`))
             return;
         setSelectedRecord(null);
         router.delete(destroyRoute(target.id).url, { preserveScroll: true });
@@ -389,8 +397,12 @@ export default function Riwayat({ records, filters }) {
                             {data && data.length > 0 ? (
                                 data.map((record) => (
                                     <TableRow key={record.id}>
-                                        <TableCell className="whitespace-nowrap">
-                                            {record.letter_number ?? '-'}
+                                        <TableCell className="whitespace-nowrap font-medium">
+                                            {formatLetterNumber(
+                                                record.letter_number,
+                                                record.letter_date ||
+                                                    record.created_at,
+                                            )}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap">
                                             {record.applicant_name ?? '-'}

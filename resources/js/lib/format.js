@@ -59,3 +59,34 @@ export function fmtDateDay(val) {
     if (isNaN(date.getTime())) return val;
     return `${HARI[date.getDay()]}, ${d} ${BULAN[date.getMonth()]} ${y}`;
 }
+
+export function formatLetterNumber(raw, date) {
+    if (!raw) return '-';
+    const trimmed = String(raw).trim();
+    if (!trimmed) return '-';
+    if (trimmed.includes('/6.20/') || trimmed.startsWith('474.2/')) {
+        return trimmed;
+    }
+    let year = new Date().getFullYear();
+    if (date) {
+        if (typeof date === 'string' && date.length >= 4) {
+            year = date.slice(0, 4);
+        } else {
+            const parsed = new Date(date);
+            if (!isNaN(parsed.getFullYear())) {
+                year = parsed.getFullYear();
+            }
+        }
+    }
+    return `474.2/${trimmed}/6.20/${year}`;
+}
+
+export function extractLetterSequence(raw) {
+    if (!raw) return '';
+    const trimmed = String(raw).trim();
+    const match = trimmed.match(/^474\.2\/(.*?)\/6\.20(?:\/\d{4})?$/);
+    if (match) {
+        return match[1];
+    }
+    return trimmed;
+}
