@@ -13,6 +13,26 @@ Route::get('/', function () {
         : redirect()->route('login');
 })->name('home');
 
+Route::get('auth/status', function () {
+    if (! auth()->check()) {
+        return response()->json(['active' => false]);
+    }
+
+    $user = auth()->user();
+    if ($user->status !== 'active') {
+        auth()->guard('web')->logout();
+        request()->session()->invalidate();
+        request()->session()->regenerateToken();
+
+        return response()->json([
+            'active' => false,
+            'message' => 'Akun Anda telah dinonaktifkan oleh administrator.',
+        ], 401);
+    }
+
+    return response()->json(['active' => true]);
+})->name('auth.status');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
